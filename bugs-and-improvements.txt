@@ -1,0 +1,14 @@
+FaceMash Game
+
+1. Hints should be given in an orderly manner (Gender, Birthdate, Movies, Initials)
+2. Should be possible to view hints for both people at once.
+3. If genders are different, guesses for male celebrities should go towards the male one and reveal male hints and vice versa for females.
+
+
+
+Improvements
+1. Archive facility
+2. Improve mashed faces
+3. Add Dark Mode and Light Mode
+4. Make theme of the website as a shade of blue
+5. Have a global constants file to turn on and off the game tiles

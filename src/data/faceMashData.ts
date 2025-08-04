@@ -14,7 +14,7 @@ export const faceMashGamesData: FaceMashGameData[] = [
       hints: [
         { type: 'gender', content: 'Male' },
         { type: 'birth_date', content: 'Born in 1965' },
-        { type: 'famous_movies', content: 'Known for: Dilwale Dulhania Le Jayenge, My Name is Khan' },
+        { type: 'famous_movies', content: 'Dilwale Dulhania Le Jayenge, My Name is Khan' },
         { type: 'initials', content: 'S.R.K.' }
       ]
     },
@@ -24,7 +24,7 @@ export const faceMashGamesData: FaceMashGameData[] = [
       hints: [
         { type: 'gender', content: 'Female' },
         { type: 'birth_date', content: 'Born in 1973' },
-        { type: 'famous_movies', content: 'Known for: Devdas, Jodha Akbar' },
+        { type: 'famous_movies', content: 'Devdas, Jodha Akbar' },
         { type: 'initials', content: 'A.R' }
       ]
     },
@@ -43,7 +43,7 @@ export const faceMashGamesData: FaceMashGameData[] = [
   //     hints: [
   //       { type: 'gender', content: 'Male' },
   //       { type: 'birth_date', content: 'Born in 1985' },
-  //       { type: 'famous_movies', content: 'Known for: Gully Boy, Padmaavat' },
+  //       { type: 'famous_movies', content: 'Gully Boy, Padmaavat' },
   //       { type: 'initials', content: 'R.S.' }
   //     ]
   //   },
@@ -53,7 +53,7 @@ export const faceMashGamesData: FaceMashGameData[] = [
   //     hints: [
   //       { type: 'gender', content: 'Female' },
   //       { type: 'birth_date', content: 'Born in 1993' },
-  //       { type: 'famous_movies', content: 'Known for: Highway, Raazi' },
+  //       { type: 'famous_movies', content: 'Highway, Raazi' },
   //       { type: 'initials', content: 'A.B.' }
   //     ]
   //   },

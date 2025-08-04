@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../components/GameLayout';
+import ShareModal from '../components/ShareModal';
 import { ConnectionsGameData, ConnectionsGroup } from '../types/gameTypes';
 import { getTodaysConnectionsGame } from '../data/connectionsData';
 import { GameStorageManager, formatTimeRemaining } from '../utils/gameStorage';
+import { generateConnectionsShareText, ConnectionsShareData } from '../utils/shareUtils';
 import { GAME_CONFIG } from '../constants/gameConfig';
 
 interface SelectedItem {
@@ -20,6 +22,10 @@ const ConnectionsGame: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [gameOver, setGameOver] = useState(false);
   const [shuffledItems, setShuffledItems] = useState<{item: string, groupId: string}[]>([]);
+  
+  // Share feature state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [attemptResults, setAttemptResults] = useState<('correct' | 'one_away' | 'wrong')[]>([]);
 
   useEffect(() => {
     const game = getTodaysConnectionsGame();
@@ -41,7 +47,13 @@ const ConnectionsGame: React.FC = () => {
         if (progress) {
           setAttempts(progress.attempts);
           setGameCompleted(progress.completed);
-          // Load solved groups from progress (simplified for this example)
+          // Load solved groups from progress
+          if (progress.gameState?.solvedGroups) {
+            setSolvedGroups(progress.gameState.solvedGroups);
+          }
+          if (progress.attemptResults) {
+            setAttemptResults(progress.attemptResults as ('correct' | 'one_away' | 'wrong')[]);
+          }
         }
       }
     }
@@ -116,6 +128,9 @@ const ConnectionsGame: React.FC = () => {
       setSolvedGroups(newSolvedGroups);
       setSelectedItems([]);
       
+      // Track correct attempt
+      setAttemptResults(prev => [...prev, 'correct']);
+      
       // Update shuffled items to remove solved group items
       const remainingItems = shuffledItems.filter(item => item.groupId !== firstGroupId);
       setShuffledItems(remainingItems);
@@ -134,15 +149,47 @@ const ConnectionsGame: React.FC = () => {
           startTime: Date.now() - (attempts * 30000), // Approximate
           endTime: Date.now(),
           score: 100 - (attempts * 10),
-          completed: true
+          completed: true,
+          gameState: {
+            solvedGroups: newSolvedGroups
+          },
+          attemptResults: [...attemptResults, 'correct']
         });
       }
     } else {
+      // Wrong group - check if one away
+      const groupCounts: { [key: string]: number } = {};
+      selectedItems.forEach(selected => {
+        groupCounts[selected.groupId] = (groupCounts[selected.groupId] || 0) + 1;
+      });
+      
+      const maxCount = Math.max(...Object.values(groupCounts));
+      const isOneAway = maxCount === 3;
+      
+      // Track attempt result
+      setAttemptResults(prev => [...prev, isOneAway ? 'one_away' : 'wrong']);
+      
       // Wrong group - provide better feedback
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       setSelectedItems([]);
       setErrorMessage(getClosenessMessage(selectedItems));
+      
+      // Save progress after each attempt
+      if (!gameCompleted) {
+        GameStorageManager.saveGameProgress(gameData!.id, {
+          gameId: gameData!.id,
+          status: 'in_progress',
+          attempts: newAttempts,
+          hintsUsed: 0,
+          startTime: Date.now() - (newAttempts * 30000),
+          completed: false,
+          gameState: {
+            solvedGroups: solvedGroups
+          },
+          attemptResults: [...attemptResults, isOneAway ? 'one_away' : 'wrong']
+        });
+      }
       
       if (newAttempts >= GAME_CONFIG.MAX_ATTEMPTS) {
         // Game over - reveal all groups
@@ -157,20 +204,44 @@ const ConnectionsGame: React.FC = () => {
           hintsUsed: 0,
           startTime: Date.now() - (newAttempts * 30000),
           endTime: Date.now(),
-          completed: false
+          completed: true,
+          gameState: {
+            solvedGroups: solvedGroups
+          },
+          attemptResults: [...attemptResults, isOneAway ? 'one_away' : 'wrong']
         });
       }
     }
   };
 
+  const generateShareData = (): ConnectionsShareData => {
+    return {
+      gameId: gameData!.id,
+      gameWon: solvedGroups.length === 4,
+      totalAttempts: attempts,
+      maxAttempts: GAME_CONFIG.MAX_ATTEMPTS,
+      solvedGroups: solvedGroups,
+      attemptResults: attemptResults
+    };
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
   const renderGroup = (group: ConnectionsGroup, isRevealed: boolean) => {
     if (isRevealed) {
+      // Find the group index to determine color
+      const groupIndex = gameData!.groups.findIndex(g => g.id === group.id);
       return (
-        <div key={group.id} className={`${group.color} p-4 rounded-lg mb-4`}>
-          <h3 className="font-bold text-white text-lg mb-2">{group.category}</h3>
-          <div className="grid grid-cols-2 gap-2">
+        <div key={group.id} className="p-4 rounded-lg mb-4" style={{ 
+          backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][groupIndex] + '20',
+          borderLeft: `4px solid ${['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][groupIndex]}`
+        }}>
+          <h3 className="font-bold text-gray-800 mb-2">{group.category}</h3>
+          <div className="grid grid-cols-4 gap-2">
             {group.items.map((item, index) => (
-              <div key={index} className="bg-white/20 p-2 rounded text-white text-center font-medium">
+              <div key={index} className="bg-white p-2 rounded text-center text-sm font-medium">
                 {item}
               </div>
             ))}
@@ -186,7 +257,7 @@ const ConnectionsGame: React.FC = () => {
         disabled={gameCompleted || cooldownTime > 0}
         className={`p-4 rounded-lg border-2 transition-all font-medium ${
           selectedItems.some(selected => selected.item === item)
-            ? 'bg-bollywood-gold border-yellow-600 text-black'
+            ? 'bg-bollywood-silver border-gray-500 text-white'
             : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-800'
         } ${(gameCompleted || cooldownTime > 0) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
@@ -204,19 +275,93 @@ const ConnectionsGame: React.FC = () => {
   }
 
   if (cooldownTime > 0) {
+    // Check if game was completed to show progress
+    const todaysGame = getTodaysConnectionsGame();
+    const gameProgress = todaysGame ? GameStorageManager.getGameProgress(todaysGame.id) : null;
+    
     return (
       <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-700 mb-4">Game on Cooldown</h2>
-          <p className="text-gray-600 mb-4">
-            You can play again in: <span className="font-bold text-bollywood-red">
-              {formatTimeRemaining(cooldownTime)}
-            </span>
-          </p>
-          <p className="text-sm text-gray-500">
-            Each game can be played once every 12 hours.
-          </p>
+        {/* Countdown Header */}
+        <div className="bg-bollywood-silver text-white p-4 rounded-lg mb-6 text-center">
+          <h2 className="text-xl font-bold mb-2">Next Challenge in:</h2>
+          <div className="text-2xl font-bold">
+            {formatTimeRemaining(cooldownTime)}
+          </div>
         </div>
+
+        {/* Show game state based on progress */}
+        {gameProgress && todaysGame ? (
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-6">
+              {gameProgress.completed && (
+                gameProgress.gameState?.solvedGroups?.length === 4 ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-green-800 mb-2">
+                      🎉 Challenge Completed!
+                    </h3>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-bold text-red-800 mb-2">
+                      😔 Challenge Not Solved
+                    </h3>
+                  </>
+                )
+              ) }
+            </div>
+
+            {/* Show all groups if game is completed */}
+            {gameProgress.completed && (
+              <div className="space-y-3 mb-6">
+                <h4 className="text-lg font-bold text-gray-800 text-center">
+                  Solution
+                </h4>
+                {todaysGame.groups.map((group, groupIndex) => {
+                  const isSolved = gameProgress.gameState?.solvedGroups?.includes(group.id);
+                  return (
+                    <div key={groupIndex} className={`p-4 rounded-lg ${isSolved ? '' : 'opacity-60'}`} style={{ 
+                      backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][groupIndex] + '20',
+                      borderLeft: `4px solid ${['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][groupIndex]}`
+                    }}>
+                      <h3 className="font-bold text-gray-800 mb-2">
+                        {group.category} {isSolved ? '✓' : '✗'}
+                      </h3>
+                      <div className="grid grid-cols-4 gap-2">
+                        {group.items.map((item, itemIndex) => (
+                          <div
+                            key={itemIndex}
+                            className="bg-white p-2 rounded text-center text-sm font-medium"
+                          >
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Share button for completed games */}
+            {gameProgress.completed && (
+              <div className="text-center">
+                <button
+                  onClick={handleShare}
+                  className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+                >
+                  📤 Share Result
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-700 mb-4">Game on Cooldown</h2>
+            <p className="text-gray-600">
+              Come back later for the next Connections challenge!
+            </p>
+          </div>
+        )}
       </GameLayout>
     );
   }
@@ -244,7 +389,17 @@ const ConnectionsGame: React.FC = () => {
         {/* Game Completed Message */}
         {gameCompleted && (
           <div className={`${solvedGroups.length === 4 ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} border px-4 py-3 rounded mb-4`}>
-            {solvedGroups.length === 4 ? 'Congratulations! You solved all groups!' : 'Game Over! Better luck next time.'}
+            <div className="flex justify-between items-center">
+              <span>
+                {solvedGroups.length === 4 ? 'Congratulations! You solved all groups!' : 'Game Over! Better luck next time.'}
+              </span>
+              <button
+                onClick={handleShare}
+                className="ml-4 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm border border-gray-300"
+              >
+                📤 Share Result
+              </button>
+            </div>
           </div>
         )}
 
@@ -262,7 +417,7 @@ const ConnectionsGame: React.FC = () => {
             .map(group => (
               <div key={group.id} className={`${group.color} p-4 rounded-lg mb-4 opacity-75`}>
                 <h3 className="font-bold text-white text-lg mb-2">{group.category} (Not Found)</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {group.items.map((item, index) => (
                     <div key={index} className="bg-white/20 p-2 rounded text-white text-center font-medium">
                       {item}
@@ -273,8 +428,8 @@ const ConnectionsGame: React.FC = () => {
             ))}
         </div>
 
-        {/* Game Grid - Hide when game is over */}
-        {!gameOver && (
+        {/* Game Grid - Hide when game is over or completed */}
+        {!gameOver && !gameCompleted && (
           <div className="mb-6">
             {/* Shuffle Button */}
             <div className="flex justify-end mb-4">
@@ -310,7 +465,7 @@ const ConnectionsGame: React.FC = () => {
                   disabled={gameCompleted || cooldownTime > 0}
                   className={`p-3 rounded-lg border-2 transition-all font-medium text-sm ${
                     selectedItems.some(selected => selected.item === item)
-                      ? 'bg-bollywood-gold border-yellow-600 text-black'
+                      ? 'bg-bollywood-silver border-gray-500 text-white'
                       : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-800'
                   } ${(gameCompleted || cooldownTime > 0) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
@@ -321,8 +476,8 @@ const ConnectionsGame: React.FC = () => {
           </div>
         )}
 
-        {/* Controls - Hide when game is over */}
-        {!gameOver && (
+        {/* Controls - Hide when game is over or completed */}
+        {!gameOver && !gameCompleted && (
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => setSelectedItems([])}
@@ -347,6 +502,16 @@ const ConnectionsGame: React.FC = () => {
           <p>You have {GAME_CONFIG.MAX_ATTEMPTS} attempts to find all groups.</p>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {(gameCompleted || cooldownTime > 0) && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareText={generateConnectionsShareText(generateShareData())}
+          gameTitle="Connections Result"
+        />
+      )}
     </GameLayout>
   );
 };

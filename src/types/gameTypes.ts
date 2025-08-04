@@ -58,6 +58,24 @@ export interface GameProgress {
   endTime?: number;
   score?: number;
   completed: boolean;
+  // Game-specific state data
+  gameState?: {
+    // For Connections: solved group IDs
+    solvedGroups?: string[];
+    // For FaceMash: actor states
+    actor1State?: {
+      found: boolean;
+      guesses: string[];
+      hintsRevealed: number;
+    };
+    actor2State?: {
+      found: boolean;
+      guesses: string[];
+      hintsRevealed: number;
+    };
+  };
+  // For Connections: attempt results
+  attemptResults?: ('correct' | 'one_away' | 'wrong')[];
 }
 
 // User Stats
@@ -80,4 +98,5 @@ export interface Actor {
   id: string;
   name: string;
   aliases?: string[]; // Alternative names or spellings
+  gender: 'male' | 'female';
 }

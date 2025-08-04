@@ -1,40 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../components/GameLayout';
-import { FaceMashGameData } from '../types/gameTypes';
+import ShareModal from '../components/ShareModal';
+import { FaceMashGameData, FaceMashHint } from '../types/gameTypes';
 import { getTodaysFaceMashGame } from '../data/faceMashData';
 import { getActorSuggestions } from '../data/actorsData';
 import { GameStorageManager, formatTimeRemaining } from '../utils/gameStorage';
+import { generateFaceMashShareText, FaceMashShareData } from '../utils/shareUtils';
 import { GAME_CONFIG } from '../constants/gameConfig';
+
+// Interface for tracking guesses and hints per actor
+interface ActorState {
+  found: boolean;
+  guesses: string[];
+  hintsRevealed: number;
+}
 
 const FaceMashGame: React.FC = () => {
   const [gameData, setGameData] = useState<FaceMashGameData | null>(null);
   const [actorGuess, setActorGuess] = useState('');
   const [actorSuggestions, setActorSuggestions] = useState<any[]>([]);
   const [attempts, setAttempts] = useState(0);
-  const [hintsRevealed, setHintsRevealed] = useState(0);
-  const [revealedHints, setRevealedHints] = useState<any[]>([]);
-  const [allHintsShuffled, setAllHintsShuffled] = useState<any[]>([]);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
-  const [correctActors, setCorrectActors] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [currentTarget, setCurrentTarget] = useState<'actor1' | 'actor2' | null>(null);
+  
+  // New state for improved actor tracking
+  const [actor1State, setActor1State] = useState<ActorState>({
+    found: false,
+    guesses: [],
+    hintsRevealed: 0
+  });
+  const [actor2State, setActor2State] = useState<ActorState>({
+    found: false,
+    guesses: [],
+    hintsRevealed: 0
+  });
+  
+  // Share feature state
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // Helper function to get ordered hints (Gender, Birthdate, Movies, Initials)
+  const getOrderedHints = (hints: FaceMashHint[]): FaceMashHint[] => {
+    const order = ['gender', 'birth_date', 'famous_movies', 'initials'];
+    return order.map(type => hints.find(hint => hint.type === type)).filter(Boolean) as FaceMashHint[];
+  };
+
+  // Helper function to determine target based on gender and current target
+  const determineTarget = (guess: string): 'actor1' | 'actor2' | null => {
+    if (!gameData) return null;
+    
+    // If user clicked on a frame, use that target
+    if (currentTarget) return currentTarget;
+    
+    // If one actor is already found, target the other one
+    if (actor1State.found && !actor2State.found) {
+      return 'actor2';
+    } else if (!actor1State.found && actor2State.found) {
+      return 'actor1';
+    }
+    
+    // Auto-target based on gender differences (only if both actors are not found yet)
+    if (!actor1State.found && !actor2State.found) {
+      const actor1Gender = gameData.actor1.hints.find(h => h.type === 'gender')?.content.toLowerCase();
+      const actor2Gender = gameData.actor2.hints.find(h => h.type === 'gender')?.content.toLowerCase();
+      
+      if (actor1Gender !== actor2Gender) {
+        // Different genders - find the guessed actor's gender from bollywoodActors data
+        const guessLower = guess.toLowerCase().trim();
+        const foundActor = getActorSuggestions(guess, 1)[0]; // Get the best match
+        
+        if (foundActor && foundActor.name.toLowerCase() === guessLower) {
+          // Exact match found - use the actor's gender
+          if (foundActor.gender === 'male' && actor1Gender === 'male') return 'actor1';
+          if (foundActor.gender === 'male' && actor2Gender === 'male') return 'actor2';
+          if (foundActor.gender === 'female' && actor1Gender === 'female') return 'actor1';
+          if (foundActor.gender === 'female' && actor2Gender === 'female') return 'actor2';
+        }
+      }
+      
+      // Default: target the one with fewer hints revealed
+      return actor1State.hintsRevealed <= actor2State.hintsRevealed ? 'actor1' : 'actor2';
+    }
+    
+    return null;
+  };
 
   useEffect(() => {
     const game = getTodaysFaceMashGame();
     if (game) {
       setGameData(game);
-      
-      // Initialize shuffled hints array once
-      const allHints = [
-        ...game.actor1.hints.map(hint => ({ ...hint, actor: game.actor1.name })),
-        ...game.actor2.hints.map(hint => ({ ...hint, actor: game.actor2.name }))
-      ];
-      const shuffledHints = allHints.sort(() => Math.random() - 0.5);
-      setAllHintsShuffled(shuffledHints);
-      
-      // Don't auto-generate morphed faces - let user enable it manually
       
       // Check if game is on cooldown
       if (GameStorageManager.isGameOnCooldown('face-mash')) {
@@ -45,13 +102,16 @@ const FaceMashGame: React.FC = () => {
         const progress = GameStorageManager.getGameProgress(game.id);
         if (progress) {
           setAttempts(progress.attempts);
-          setHintsRevealed(progress.hintsUsed);
-          // Load previously revealed hints
-          const hintsToShow = shuffledHints.slice(0, progress.hintsUsed);
-          setRevealedHints(hintsToShow);
           setGameCompleted(progress.completed);
           if (progress.completed) {
             setShowAnswers(true);
+          }
+          // Restore actor states from progress
+          if (progress.gameState?.actor1State) {
+            setActor1State(progress.gameState.actor1State);
+          }
+          if (progress.gameState?.actor2State) {
+            setActor2State(progress.gameState.actor2State);
           }
         }
       }
@@ -81,6 +141,23 @@ const FaceMashGame: React.FC = () => {
     setShowSuggestions(false);
   };
 
+  const handleFrameClick = (target: 'actor1' | 'actor2') => {
+    setCurrentTarget(target);
+  };
+
+  const revealNextHint = (target: 'actor1' | 'actor2') => {
+    const targetState = target === 'actor1' ? actor1State : actor2State;
+    const setTargetState = target === 'actor1' ? setActor1State : setActor2State;
+    const targetHints = target === 'actor1' ? getOrderedHints(gameData!.actor1.hints) : getOrderedHints(gameData!.actor2.hints);
+    
+    if (targetState.hintsRevealed < targetHints.length) {
+      setTargetState(prev => ({
+        ...prev,
+        hintsRevealed: prev.hintsRevealed + 1
+      }));
+    }
+  };
+
   const handleSubmit = () => {
     if (!actorGuess.trim() || gameCompleted || cooldownTime > 0) return;
     
@@ -92,14 +169,27 @@ const FaceMashGame: React.FC = () => {
     setAttempts(newAttempts);
     
     if (actor1Correct || actor2Correct) {
-      // Correct guess - add to found actors
-      const foundActor = actor1Correct ? gameData!.actor1.name : gameData!.actor2.name;
-      const newCorrectActors = [...correctActors, foundActor];
-      setCorrectActors(newCorrectActors);
-      setActorGuess('');
+      // Correct guess
+      const correctTarget = actor1Correct ? 'actor1' : 'actor2';
+      const setTargetState = correctTarget === 'actor1' ? setActor1State : setActor2State;
+      const targetHints = correctTarget === 'actor1' ? getOrderedHints(gameData!.actor1.hints) : getOrderedHints(gameData!.actor2.hints);
       
-      if (newCorrectActors.length === 2) {
-        // Both actors found - game won
+      // Temporarily highlight the correct target frame
+      setCurrentTarget(correctTarget);
+      setTimeout(() => setCurrentTarget(null), 1500); // Clear highlight after 1.5 seconds
+      
+      setTargetState(prev => ({
+        ...prev,
+        found: true,
+        guesses: [...prev.guesses, actorGuess],
+        hintsRevealed: targetHints.length // Show all hints when actor is found
+      }));
+      
+      // Check if both actors found
+      const bothFound = (correctTarget === 'actor1' ? true : actor1State.found) && 
+                      (correctTarget === 'actor2' ? true : actor2State.found);
+      
+      if (bothFound) {
         setGameCompleted(true);
         setGameWon(true);
         setShowAnswers(true);
@@ -109,319 +199,499 @@ const FaceMashGame: React.FC = () => {
           gameId: gameData!.id,
           status: 'completed',
           attempts: newAttempts,
-          hintsUsed: hintsRevealed,
+          hintsUsed: actor1State.hintsRevealed + actor2State.hintsRevealed,
           startTime: Date.now() - (newAttempts * 60000),
           endTime: Date.now(),
           score: 100 - (newAttempts * 15),
-          completed: true
+          completed: true,
+          gameState: {
+            actor1State: correctTarget === 'actor1' ? { found: true, guesses: [...actor1State.guesses, actorGuess], hintsRevealed: targetHints.length } : actor1State,
+            actor2State: correctTarget === 'actor2' ? { found: true, guesses: [...actor2State.guesses, actorGuess], hintsRevealed: targetHints.length } : actor2State
+          }
         });
       }
     } else {
-      // Wrong answer - reveal hint if available
-      if (hintsRevealed < GAME_CONFIG.MAX_HINTS && hintsRevealed < allHintsShuffled.length) {
-        const nextHint = allHintsShuffled[hintsRevealed];
-        setRevealedHints(prev => [...prev, nextHint]);
-        setHintsRevealed(hintsRevealed + 1);
-      }
-      
-      if (newAttempts >= GAME_CONFIG.MAX_ATTEMPTS) {
-        // Game over - reveal answers
-        setGameCompleted(true);
-        setShowAnswers(true);
-        GameStorageManager.updateLastPlayed('face-mash');
-        GameStorageManager.updateUserStats('face-mash', false, newAttempts);
+      // Wrong guess - determine target and add to their guesses
+      const target = determineTarget(actorGuess);
+      if (target) {
+        const targetState = target === 'actor1' ? actor1State : actor2State;
+        const setTargetState = target === 'actor1' ? setActor1State : setActor2State;
+        
+        // Temporarily highlight the target frame
+        setCurrentTarget(target);
+        setTimeout(() => setCurrentTarget(null), 1000); // Clear highlight after 1 second
+        
+        setTargetState(prev => ({
+          ...prev,
+          guesses: [...prev.guesses, actorGuess]
+        }));
+        
+        // Reveal hint for the target
+        revealNextHint(target);
+        
+        // Save progress after each attempt
         GameStorageManager.saveGameProgress(gameData!.id, {
           gameId: gameData!.id,
-          status: 'completed',
+          status: 'in_progress',
           attempts: newAttempts,
-          hintsUsed: hintsRevealed,
+          hintsUsed: actor1State.hintsRevealed + actor2State.hintsRevealed,
           startTime: Date.now() - (newAttempts * 60000),
-          endTime: Date.now(),
-          completed: false
+          completed: false,
+          gameState: {
+            actor1State: target === 'actor1' ? { ...actor1State, guesses: [...actor1State.guesses, actorGuess] } : actor1State,
+            actor2State: target === 'actor2' ? { ...actor2State, guesses: [...actor2State.guesses, actorGuess] } : actor2State
+          }
         });
+        
+        // Check if this actor has reached 5 wrong attempts
+        if (targetState.guesses.length + 1 >= 5) {
+          // Check if both actors have reached max attempts or are found
+          const actor1Done = actor1State.found || (target === 'actor1' ? targetState.guesses.length + 1 >= 5 : actor1State.guesses.length >= 5);
+          const actor2Done = actor2State.found || (target === 'actor2' ? targetState.guesses.length + 1 >= 5 : actor2State.guesses.length >= 5);
+          
+          if (actor1Done && actor2Done) {
+            // Game over
+            setGameCompleted(true);
+            setShowAnswers(true);
+            GameStorageManager.updateLastPlayed('face-mash');
+            GameStorageManager.updateUserStats('face-mash', false, newAttempts);
+            GameStorageManager.saveGameProgress(gameData!.id, {
+              gameId: gameData!.id,
+              status: 'completed',
+              attempts: newAttempts,
+              hintsUsed: actor1State.hintsRevealed + actor2State.hintsRevealed,
+              startTime: Date.now() - (newAttempts * 60000),
+              endTime: Date.now(),
+              completed: false,
+              gameState: {
+                actor1State: actor1State,
+                actor2State: actor2State
+              }
+            });
+          }
+        }
       }
     }
     
     setActorGuess('');
+    // Don't reset currentTarget here - let the timeout handle it for visual feedback
   };
 
-  const renderHints = () => {
-    if (revealedHints.length === 0) return null;
-    
-    // Filter out hints from actors that have already been correctly guessed
-    const hintsToShow = revealedHints.filter(hint => !correctActors.includes(hint.actor));
-    
-    if (hintsToShow.length === 0) return null;
-    
-    return (
-      <div className="bg-blue-50 p-4 rounded-lg mb-6">
-        <h4 className="font-semibold text-blue-800 mb-3">Hints:</h4>
-        <div className="space-y-2">
-          {hintsToShow.map((hint, index) => (
-            <p key={index} className="text-blue-700 text-sm">
-              <span className="font-medium">{hint.type.replace('_', ' ').toUpperCase()}:</span> {hint.content}
-            </p>
-          ))}
-        </div>
-      </div>
-    );
+  const generateShareData = (): FaceMashShareData => {
+    return {
+      gameId: gameData!.id,
+      gameWon: gameWon,
+      totalAttempts: attempts,
+      maxAttempts: GAME_CONFIG.MAX_ATTEMPTS,
+      actor1Found: actor1State.found,
+      actor2Found: actor2State.found,
+      actor1Attempts: actor1State.guesses.length,
+      actor2Attempts: actor2State.guesses.length
+    };
   };
 
-  const renderSuggestions = () => {
-    if (!showSuggestions || actorSuggestions.length === 0) return null;
-    
-    return (
-      <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-        {actorSuggestions.map((actor, index) => (
-          <button
-            key={actor.id}
-            onClick={() => selectActorSuggestion(actor.name)}
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors text-sm"
-          >
-            {actor.name}
-          </button>
-        ))}
-      </div>
-    );
+  const handleShare = () => {
+    setShowShareModal(true);
   };
 
-  const renderActorPhotos = () => {
-    if (!showAnswers || !gameData) return null;
+  const renderActorFrame = (actorKey: 'actor1' | 'actor2') => {
+    if (!gameData) return null;
+    
+    const actor = actorKey === 'actor1' ? gameData.actor1 : gameData.actor2;
+    const state = actorKey === 'actor1' ? actor1State : actor2State;
+    const isSelected = currentTarget === actorKey;
     
     return (
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        <div className="text-center">
-          <img 
-            src={gameData.actor1.image} 
-            alt={gameData.actor1.name}
-            className="w-48 h-48 mx-auto object-cover rounded-lg mb-2 border-2 border-gray-300"
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              target.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <div className="bg-gray-200 w-48 h-48 mx-auto rounded-lg flex items-center justify-center mb-2 hidden">
-            <span className="text-gray-500 text-sm">Actor 1 Photo</span>
-          </div>
-          <p className="font-semibold text-lg">{gameData.actor1.name}</p>
-          {correctActors.includes(gameData.actor1.name) && (
-            <span className="text-green-600 text-sm">✓ Guessed correctly!</span>
-          )}
-          
-          {/* Show all hints for Actor 1 if guessed correctly */}
-          {correctActors.includes(gameData.actor1.name) && (
-            <div className="mt-4 bg-green-50 border border-green-200 p-3 rounded-lg text-left">
-              <h4 className="font-semibold text-green-800 mb-2 text-center">Hints:</h4>
-              <div className="space-y-1">
-                {gameData.actor1.hints.map((hint, index) => (
-                  <p key={index} className="text-green-700 text-xs">
-                    <span className="font-medium">{hint.type.replace('_', ' ').toUpperCase()}:</span> {hint.content}
-                  </p>
-                ))}
+      <div 
+        className={`relative cursor-pointer transition-all duration-300 ${
+          isSelected ? 'ring-4 ring-blue-500' : ''
+        }`}
+        onClick={() => handleFrameClick(actorKey)}
+      >
+        <div className="w-48 h-64 bg-gray-200 rounded-lg overflow-hidden shadow-lg">
+          {state.found || showAnswers ? (
+            <img 
+              src={actor.image} 
+              alt={actor.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-300 relative">
+              <svg className="w-20 h-20 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <div className="absolute bottom-4 w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">?</span>
               </div>
             </div>
           )}
         </div>
         
-        <div className="text-center">
-          <img 
-            src={gameData.actor2.image} 
-            alt={gameData.actor2.name}
-            className="w-48 h-48 mx-auto object-cover rounded-lg mb-2 border-2 border-gray-300"
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              target.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <div className="bg-gray-200 w-48 h-48 mx-auto rounded-lg flex items-center justify-center mb-2 hidden">
-            <span className="text-gray-500 text-sm">Actor 2 Photo</span>
+        {/* Actor name (shown when found or game completed) */}
+        {(state.found || showAnswers) && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center">
+            <p className="font-semibold">{actor.name}</p>
           </div>
-          <p className="font-semibold text-lg">{gameData.actor2.name}</p>
-          {correctActors.includes(gameData.actor2.name) && (
-            <span className="text-green-600 text-sm">✓ Guessed correctly!</span>
-          )}
-          
-          {/* Show all hints for Actor 2 if guessed correctly */}
-          {correctActors.includes(gameData.actor2.name) && (
-            <div className="mt-4 bg-green-50 border border-green-200 p-3 rounded-lg text-left">
-              <h4 className="font-semibold text-green-800 mb-2 text-center">Hints:</h4>
-              <div className="space-y-1">
-                {gameData.actor2.hints.map((hint, index) => (
-                  <p key={index} className="text-green-700 text-xs">
-                    <span className="font-medium">{hint.type.replace('_', ' ').toUpperCase()}:</span> {hint.content}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
+        )}
+        
+        {/* Target indicator */}
+        {isSelected && (
+          <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+            ✓
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderHints = (actorKey: 'actor1' | 'actor2') => {
+    if (!gameData) return null;
+    
+    const actor = actorKey === 'actor1' ? gameData.actor1 : gameData.actor2;
+    const state = actorKey === 'actor1' ? actor1State : actor2State;
+    const orderedHints = getOrderedHints(actor.hints);
+    
+    if (state.hintsRevealed === 0) return null;
+    
+    const isLeftActor = actorKey === 'actor1';
+    
+    return (
+      <div className={`bg-gray-50 p-4 rounded-lg ${isLeftActor ? 'text-left' : 'text-right'}`}>
+        <ul className="space-y-1">
+          {orderedHints.slice(0, state.hintsRevealed).map((hint, index) => (
+            <li key={index} className="text-sm">
+              <span className="font-medium capitalize">{hint.type.replace('_', ' ')}:</span> {hint.content}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const renderGuessHistory = (actorKey: 'actor1' | 'actor2') => {
+    const state = actorKey === 'actor1' ? actor1State : actor2State;
+    const actor = actorKey === 'actor1' ? gameData!.actor1 : gameData!.actor2;
+    
+    if (state.guesses.length === 0) return null;
+    
+    return (
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <h5 className="font-medium text-gray-800 mb-2">
+          Your Guesses:
+        </h5>
+        <div className="flex flex-wrap gap-1">
+          {state.guesses.map((guess, index) => {
+            const isCorrect = guess.toLowerCase() === actor.name.toLowerCase();
+            return (
+              <span 
+                key={index}
+                className={`px-2 py-1 rounded text-xs ${
+                  isCorrect 
+                    ? 'bg-green-200 text-green-800' 
+                    : 'bg-red-200 text-red-800'
+                }`}
+              >
+                {guess}
+              </span>
+            );
+          })}
         </div>
       </div>
     );
   };
 
-  if (!gameData) {
+  if (cooldownTime > 0) {
+    // Check if game was completed to show progress
+    const todaysGame = getTodaysFaceMashGame();
+    const gameProgress = todaysGame ? GameStorageManager.getGameProgress(todaysGame.id) : null;
+    
     return (
-      <GameLayout title="Face Mash" description="Loading game...">
-        <div className="text-center py-8">Loading...</div>
+      <GameLayout title="Face Mash">
+        {/* Countdown Header */}
+        <div className="bg-bollywood-silver text-white p-4 rounded-lg mb-6 text-center">
+          <h2 className="text-xl font-bold">Next Challenge in: {formatTimeRemaining(cooldownTime)} </h2>
+        </div>
+
+        {/* Show game state based on progress */}
+        {gameProgress && todaysGame ? (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="text-center mb-6">
+              {gameProgress.completed && (
+                (gameProgress.gameState?.actor1State?.found && gameProgress.gameState?.actor2State?.found) ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-green-800 mb-2">
+                      🎉 Challenge Completed!
+                    </h3>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-bold text-red-800 mb-2">
+                      😔 Challenge Not Solved
+                    </h3>
+                  </>
+                )
+              ) }
+            </div>
+
+            {/* Show the game state */}
+            <div className="flex justify-center items-center gap-8 mb-6">
+              {/* Left Actor */}
+              <div className="relative">
+                <div className="w-48 h-64 bg-gray-200 rounded-lg overflow-hidden shadow-lg">
+                  {(gameProgress.gameState?.actor1State?.found || gameProgress.completed) ? (
+                    <img 
+                      src={todaysGame.actor1.image} 
+                      alt={todaysGame.actor1.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-300 relative">
+                      <svg className="w-20 h-20 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                      </svg>
+                      <div className="absolute bottom-4 w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">?</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {(gameProgress.gameState?.actor1State?.found || gameProgress.completed) && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center">
+                    <p className="font-semibold">{todaysGame.actor1.name}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Mashed Image */}
+              <div className="flex-shrink-0">
+                <img 
+                  src={todaysGame.mashedImage} 
+                  alt="Mashed face"
+                  className="w-64 h-64 object-cover rounded-lg shadow-lg"
+                />
+              </div>
+              
+              {/* Right Actor */}
+              <div className="relative">
+                <div className="w-48 h-64 bg-gray-200 rounded-lg overflow-hidden shadow-lg">
+                  {(gameProgress.gameState?.actor2State?.found || gameProgress.completed) ? (
+                    <img 
+                      src={todaysGame.actor2.image} 
+                      alt={todaysGame.actor2.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-300 relative">
+                      <svg className="w-20 h-20 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                      </svg>
+                      <div className="absolute bottom-4 w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">?</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {(gameProgress.gameState?.actor2State?.found || gameProgress.completed) && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-center">
+                    <p className="font-semibold">{todaysGame.actor2.name}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Show guesses if available */}
+            {(gameProgress.gameState?.actor1State?.guesses?.length || gameProgress.gameState?.actor2State?.guesses?.length) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Actor 1 Guesses */}
+                {gameProgress.gameState?.actor1State?.guesses?.length && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <h5 className="font-medium text-gray-800 mb-2">Guesses:</h5>
+                    <div className="flex flex-wrap gap-1">
+                      {gameProgress.gameState.actor1State.guesses.map((guess, index) => {
+                        const isCorrect = guess.toLowerCase() === todaysGame.actor1.name.toLowerCase();
+                        return (
+                          <span 
+                            key={index}
+                            className={`px-2 py-1 rounded text-xs ${
+                              isCorrect 
+                                ? 'bg-green-200 text-green-800' 
+                                : 'bg-red-200 text-red-800'
+                            }`}
+                          >
+                            {guess}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Actor 2 Guesses */}
+                {gameProgress.gameState?.actor2State?.guesses?.length && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <h5 className="font-medium text-gray-800 mb-2">Guesses:</h5>
+                    <div className="flex flex-wrap gap-1">
+                      {gameProgress.gameState.actor2State.guesses.map((guess, index) => {
+                        const isCorrect = guess.toLowerCase() === todaysGame.actor2.name.toLowerCase();
+                        return (
+                          <span 
+                            key={index}
+                            className={`px-2 py-1 rounded text-xs ${
+                              isCorrect 
+                                ? 'bg-green-200 text-green-800' 
+                                : 'bg-red-200 text-red-800'
+                            }`}
+                          >
+                            {guess}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Share button for completed games */}
+            {gameProgress.completed && (
+              <div className="text-center">
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+                >
+                  📤 Share Result
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white p-8 rounded-lg shadow-md text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Game is on cooldown</h2>
+            <p className="text-gray-600">
+              Come back later for the next Face Mash challenge!
+            </p>
+          </div>
+        )}
       </GameLayout>
     );
   }
 
-  if (cooldownTime > 0) {
+  if (!gameData) {
     return (
-      <GameLayout title="Face Mash" description="Guess both actors from the merged face">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-700 mb-4">Game on Cooldown</h2>
-          <p className="text-gray-600 mb-4">
-            You can play again in: <span className="font-bold text-bollywood-red">
-              {formatTimeRemaining(cooldownTime)}
-            </span>
-          </p>
-          <p className="text-sm text-gray-500">
-            Each game can be played once every 12 hours.
-          </p>
+      <GameLayout title="Face Mash">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center">
+          <p>Loading today's Face Mash challenge...</p>
         </div>
       </GameLayout>
     );
   }
 
   return (
-    <GameLayout title="Face Mash" description="Guess the actors from the merged face">
-      <div className="max-w-4xl mx-auto">
-        {/* Game Status */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-600">
-            Attempts: {attempts}/{GAME_CONFIG.MAX_ATTEMPTS}
-          </div>
-          <div className="text-sm text-gray-600">
-            Actors found: {correctActors.length}/2
-          </div>
-          <div className="text-sm text-gray-600">
-            Hints revealed: {hintsRevealed}/{GAME_CONFIG.MAX_HINTS}
-          </div>
-        </div>
-
-        {/* Game Completed Message */}
+    <GameLayout title={gameData.title}>
+      {/* Game Completed Section */}
         {gameCompleted && (
-          <div className={`${gameWon ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} border px-4 py-3 rounded mb-4`}>
-            {gameWon 
-              ? `Congratulations! You found both actors in ${attempts} attempts!` 
-              : `Game Over! The actors were: ${gameData.actor1.name} and ${gameData.actor2.name}`}
-          </div>
-        )}
-
-        {/* Correct Actors Display */}
-        {correctActors.length > 0 && !showAnswers && (
-          <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
-            <h3 className="font-semibold text-green-800 mb-4">Correct Answers Found:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {correctActors.map((actorName, index) => {
-                const isActor1 = actorName === gameData.actor1.name;
-                const actor = isActor1 ? gameData.actor1 : gameData.actor2;
-                
-                return (
-                  <div key={index} className="bg-white p-3 rounded-lg border border-green-300">
-                    <div className="text-center mb-3">
-                      <h4 className="font-semibold text-green-800 text-lg">{actorName}</h4>
-                      <span className="text-green-600 text-sm">✓ Guessed correctly!</span>
-                    </div>
-                    
-                    {/* Show all hints for the correctly guessed actor */}
-                    <div className="text-left">
-                      <h5 className="font-medium text-green-700 mb-2 text-sm">All Hints:</h5>
-                      <div className="space-y-1">
-                        {actor.hints.map((hint, hintIndex) => (
-                          <p key={hintIndex} className="text-green-600 text-xs">
-                            <span className="font-medium">{hint.type.replace('_', ' ').toUpperCase()}:</span> {hint.content}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Mashed Image */}
-        <div className="text-center mb-8">
-          {gameData?.mashedImage ? (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Mashed Face
+          <div className="text-center">
+            <div className={`p-6 rounded-lg ${gameWon ? 'bg-green-50' : 'bg-red-50'}`}>
+              <h3 className={`text-2xl font-bold mb-4 ${gameWon ? 'text-green-800' : 'text-red-800'}`}>
+                {gameWon ? '🎉 Congratulations!' : '😔 Game Over'}
               </h3>
-              <img 
-                src={gameData.mashedImage} 
-                alt="Mashed faces of two actors"
-                className="w-64 h-64 mx-auto object-cover rounded-lg shadow-lg border-2 border-bollywood-gold"
-              />
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-gray-200 w-64 h-64 mx-auto rounded-lg flex items-center justify-center">
-                <span className="text-gray-500">Loading mashed image...</span>
-              </div>
-            </div>
-          )}
+          </div>
+        )}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        {/* Main Game Area */}
+        <div className="flex justify-center items-center gap-8 mb-8">
+          {/* Left Actor Frame */}
+          {renderActorFrame('actor1')}
+          
+          {/* Mashed Image */}
+          <div className="flex-shrink-0">
+            <img 
+              src={gameData.mashedImage} 
+              alt="Mashed face"
+              className="w-64 h-64 object-cover rounded-lg shadow-lg"
+            />
+          </div>
+          
+          {/* Right Actor Frame */}
+          {renderActorFrame('actor2')}
         </div>
 
-        {/* Actor Photos (shown when game ends) */}
-        {renderActorPhotos()}
+        {/* Hints Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="md:col-start-1">
+            {renderHints('actor1')}
+          </div>
+          <div className="md:col-start-2">
+            {renderHints('actor2')}
+          </div>
+        </div>
 
-        {/* Input Field - Hidden when game is completed */}
+        {/* Guess History */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {renderGuessHistory('actor1')}
+          {renderGuessHistory('actor2')}
+        </div>
+
+        {/* Input Section */}
         {!gameCompleted && (
-          <div className="mb-6">
-            <div className="relative max-w-md mx-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                Enter Actor Name
-              </label>
+          <div className="relative mb-6">
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={actorGuess}
                 onChange={(e) => handleInputChange(e.target.value)}
-                onFocus={() => setShowSuggestions(actorSuggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bollywood-gold focus:border-transparent text-center"
-                placeholder="Type actor name..."
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSubmit();
-                  }
-                }}
+                placeholder="Guess an actor's name..."
+                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bollywood-silver focus:border-transparent"
+                onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
               />
-              {renderSuggestions()}
+              <button
+                onClick={handleSubmit}
+                disabled={!actorGuess.trim()}
+                className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Guess
+              </button>
             </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && actorSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-12 bg-white border border-gray-300 rounded-lg shadow-lg mt-1 z-10">
+                {actorSuggestions.slice(0, 5).map((actor, index) => (
+                  <button
+                    key={index}
+                    onClick={() => selectActorSuggestion(actor.name)}
+                    className="w-full p-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                  >
+                    {actor.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Hints */}
-        {renderHints()}
-
-        {/* Submit Button - Hidden when game is completed */}
-        {!gameCompleted && (
-          <div className="text-center mb-6">
+        {gameCompleted && (
+          <div className="flex justify-center gap-4">
             <button
-              onClick={handleSubmit}
-              disabled={!actorGuess.trim()}
-              className="px-8 py-3 bg-bollywood-red text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors font-semibold"
+              onClick={handleShare}
+              className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
             >
-              Submit Guess
+              📤 Share Result
             </button>
           </div>
         )}
-
-        {/* Instructions */}
-        <div className="text-sm text-gray-600 text-center">
-          <p>Enter the name of either actor whose face has been merged in the image above.</p>
-          <p>You have {GAME_CONFIG.MAX_ATTEMPTS} attempts total. Find both actors to win!</p>
-          <p>Hints will be revealed after each wrong guess.</p>
-        </div>
       </div>
+
+      {/* Share Modal */}
+      {(gameCompleted || cooldownTime > 0) && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareText={generateFaceMashShareText(generateShareData())}
+          gameTitle="Face Mash Result"
+        />
+      )}
     </GameLayout>
   );
 };

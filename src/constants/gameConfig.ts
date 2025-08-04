@@ -16,6 +16,37 @@ export const GAME_CONFIG = {
   }
 } as const;
 
+// Share Feature Configuration
+export const SHARE_CONFIG = {
+  // Emoji colors for share results (customizable)
+  COLORS: {
+    // Face Mash Game Colors
+    FACE_MASH: {
+      WRONG_ATTEMPT: '🟥', // Red for wrong attempts
+      SUCCESS: '🟩',       // Green for success
+      ALT_WRONG: '🔴',     // Alternative red (smaller)
+      ALT_SUCCESS: '✅'     // Alternative success
+    },
+    // Connections Game Colors (NYT style)
+    CONNECTIONS: {
+      CORRECT: '🟩',       // Green for correct group
+      ONE_AWAY: '🟨',      // Yellow for one away
+      WRONG: '🟥',         // Red for wrong
+      BACKGROUND: '⬜'     // White/gray background
+    }
+  },
+  
+  // Website URL for shares
+  WEBSITE_URL: 'denofbollywood.com',
+  
+  // Game numbering (can be date-based or sequential)
+  getGameNumber: (gameId: string): string => {
+    // Extract number from gameId (e.g., 'face-mash-001' -> '1')
+    const match = gameId.match(/(\d+)$/);
+    return match ? match[1] : '1';
+  }
+} as const;
+
 // Local Storage Keys
 export const STORAGE_KEYS = {
   GAME_PROGRESS: 'bollywood_game_progress',

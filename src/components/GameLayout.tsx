@@ -9,7 +9,7 @@ interface GameLayoutProps {
 
 const GameLayout: React.FC<GameLayoutProps> = ({ children, title, description }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bollywood-orange to-bollywood-red">
+    <div className="min-h-screen bg-gradient-to-br from-bollywood-darkBlue to-bollywood-lightBlue ">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
