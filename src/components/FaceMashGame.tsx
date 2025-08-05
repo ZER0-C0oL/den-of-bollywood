@@ -374,8 +374,10 @@ const FaceMashGame: React.FC = () => {
     
     if (state.guesses.length === 0) return null;
     
+    const isLeftActor = actorKey === 'actor1';
+    
     return (
-      <div className="bg-gray-50 p-3 rounded-lg">
+      <div className={'bg-gray-50 p-3 rounded-lg ' + (isLeftActor ? 'text-left' : 'text-right')}>
         <h5 className="font-medium text-gray-800 mb-2">
           Your Guesses:
         </h5>
@@ -408,7 +410,7 @@ const FaceMashGame: React.FC = () => {
     return (
       <GameLayout title="Face Mash">
         {/* Countdown Header */}
-        <div className="bg-bollywood-silver text-white p-4 rounded-lg mb-6 text-center">
+        <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
           <h2 className="text-xl font-bold">Next Challenge in: {formatTimeRemaining(cooldownTime)} </h2>
         </div>
 
@@ -557,7 +559,7 @@ const FaceMashGame: React.FC = () => {
               <div className="text-center">
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+                  className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
                 >
                   📤 Share Result
                 </button>
@@ -642,13 +644,13 @@ const FaceMashGame: React.FC = () => {
                 value={actorGuess}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="Guess an actor's name..."
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bollywood-silver focus:border-transparent"
+                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bollywood-teal focus:border-transparent"
                 onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
               />
               <button
                 onClick={handleSubmit}
                 disabled={!actorGuess.trim()}
-                className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Guess
               </button>
@@ -675,7 +677,7 @@ const FaceMashGame: React.FC = () => {
           <div className="flex justify-center gap-4">
             <button
               onClick={handleShare}
-              className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+              className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
             >
               📤 Share Result
             </button>

@@ -257,7 +257,7 @@ const ConnectionsGame: React.FC = () => {
         disabled={gameCompleted || cooldownTime > 0}
         className={`p-4 rounded-lg border-2 transition-all font-medium ${
           selectedItems.some(selected => selected.item === item)
-            ? 'bg-bollywood-silver border-gray-500 text-white'
+            ? 'bg-bollywood-teal border-gray-500 text-white'
             : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-800'
         } ${(gameCompleted || cooldownTime > 0) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
@@ -282,7 +282,7 @@ const ConnectionsGame: React.FC = () => {
     return (
       <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
         {/* Countdown Header */}
-        <div className="bg-bollywood-silver text-white p-4 rounded-lg mb-6 text-center">
+        <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
           <h2 className="text-xl font-bold mb-2">Next Challenge in:</h2>
           <div className="text-2xl font-bold">
             {formatTimeRemaining(cooldownTime)}
@@ -347,7 +347,7 @@ const ConnectionsGame: React.FC = () => {
               <div className="text-center">
                 <button
                   onClick={handleShare}
-                  className="bg-bollywood-silver text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+                  className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
                 >
                   📤 Share Result
                 </button>
@@ -465,7 +465,7 @@ const ConnectionsGame: React.FC = () => {
                   disabled={gameCompleted || cooldownTime > 0}
                   className={`p-3 rounded-lg border-2 transition-all font-medium text-sm ${
                     selectedItems.some(selected => selected.item === item)
-                      ? 'bg-bollywood-silver border-gray-500 text-white'
+                      ? 'bg-bollywood-teal border-gray-500 text-white'
                       : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-800'
                   } ${(gameCompleted || cooldownTime > 0) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >

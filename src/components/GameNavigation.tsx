@@ -38,7 +38,7 @@ const GameNavigation: React.FC = () => {
       </button>
       
       {isDropdownOpen && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
           {otherGames.map((game) => (
             <Link
               key={game.route}

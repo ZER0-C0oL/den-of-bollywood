@@ -61,10 +61,10 @@ const HomePage: React.FC = () => {
   ];
 
   return (
-    <GameLayout title="Den of Bollywood" description="Daily Bollywood Challenges">
+    <GameLayout title="" description="">
       <div className="max-w-6xl mx-auto">
         {/* Welcome Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
             Welcome to Den of Bollywood!
           </h1>
@@ -72,34 +72,30 @@ const HomePage: React.FC = () => {
             Test your Bollywood knowledge with our daily games. Each game can be played once every 12 hours, 
             so make every attempt count!
           </p>
-        </div>
 
-        {/* User Stats Overview */}
-        {userStats.totalGamesPlayed > 0 && (
-          <div className="bg-gradient-to-r from-bollywood-silver to-bollywood-lightGray p-4 rounded-lg mb-4 text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">Your Stats</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white/20 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-white">{userStats.totalGamesPlayed}</div>
-                <div className="text-sm text-white/80">Games Played</div>
+          {/* User Stats Card */}
+          {userStats.totalGamesPlayed > 0 && (
+            <div className="mt-2 md:absolute md:top-0 md:left-0 bg-bollywood-veryLightBlue border border-gray-200 rounded-lg shadow-sm p-3 text-xs z-10 inline-block">
+              <div className="text-center mb-1">
+                <div className="font-bold text-black-700 text-xs">Your Stats</div>
               </div>
-              <div className="bg-white/20 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-white">{userStats.totalGamesCompleted}</div>
-                <div className="text-sm text-white/80">Games Completed</div>
-              </div>
-              <div className="bg-white/20 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-white">{userStats.streakCount}</div>
-                <div className="text-sm text-white/80">Current Streak</div>
-              </div>
-              <div className="bg-white/20 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-white">
-                  {Math.round(userStats.averageAttempts * 10) / 10}
+              <div className="flex gap-3">
+                <div className="text-center">
+                  <div className="font-bold text-gray-800">{userStats.totalGamesPlayed}</div>
+                  <div className="text-gray-500 text-xs font-semibold">Played</div>
                 </div>
-                <div className="text-sm text-white/80">Avg Attempts</div>
+                <div className="text-center">
+                  <div className="font-bold text-gray-800">{userStats.totalGamesCompleted}</div>
+                  <div className="text-gray-500 text-xs font-semibold">Won</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-gray-800">{userStats.streakCount}</div>
+                  <div className="text-gray-500 text-xs font-semibold">Streak</div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Games Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -140,14 +136,20 @@ const HomePage: React.FC = () => {
                 <p className="text-gray-600 mb-6">{game.description}</p>
                 
                 {/* Game Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-                  <div className="bg-gray-50 p-3 rounded">
+                <div className="grid grid-cols-3 gap-3 mb-6 text-sm">
+                  <div className="bg-gray-50 p-3 rounded text-center">
                     <div className="font-semibold text-gray-800">{game.stats.played}</div>
-                    <div className="text-gray-600">Played</div>
+                    <div className="text-gray-600 text-xs">Played</div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded">
+                  <div className="bg-gray-50 p-3 rounded text-center">
                     <div className="font-semibold text-gray-800">{game.stats.completed}</div>
-                    <div className="text-gray-600">Completed</div>
+                    <div className="text-gray-600 text-xs">Completed</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded text-center">
+                    <div className="font-semibold text-gray-800">
+                      {game.stats.averageAttempts > 0 ? Math.round(game.stats.averageAttempts * 10) / 10 : '-'}
+                    </div>
+                    <div className="text-gray-600 text-xs">Avg Attempts</div>
                   </div>
                 </div>
                 

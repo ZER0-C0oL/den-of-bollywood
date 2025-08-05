@@ -65,7 +65,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareText, gam
             className={`w-full p-3 rounded-lg font-semibold transition-colors ${
               copySuccess 
                 ? 'bg-green-500 text-white' 
-                : 'bg-bollywood-silver text-white hover:bg-gray-500'
+                : 'bg-bollywood-teal text-white hover:bg-gray-500'
             }`}
           >
             {copySuccess ? '✅ Copied!' : '📋 Copy to Clipboard'}
