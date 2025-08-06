@@ -125,11 +125,6 @@ const HomePage: React.FC = () => {
                         In Progress
                       </span>
                     )}
-                    {game.onCooldown && (
-                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                        On Cooldown
-                      </span>
-                    )}
                   </div>
                 </div>
                 
