@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import { ConnectionsGame } from './components/games/connections';
-import FaceMashGame from './components/FaceMashGame';
+import { FaceMashGame } from './components/games/facemash';
 import './App.css';
 
 function App() {
