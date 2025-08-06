@@ -185,6 +185,34 @@ export class GameStorageManager {
       console.error('Error clearing game data:', error);
     }
   }
+
+  // Clear progress for a specific game
+  static clearGameProgress(gameId: string): void {
+    try {
+      const progressData = localStorage.getItem(STORAGE_KEYS.GAME_PROGRESS);
+      if (!progressData) return;
+      
+      const allProgress: Record<string, GameProgress> = JSON.parse(progressData);
+      delete allProgress[gameId];
+      localStorage.setItem(STORAGE_KEYS.GAME_PROGRESS, JSON.stringify(allProgress));
+    } catch (error) {
+      console.error('Error clearing game progress:', error);
+    }
+  }
+
+  // Clear cooldown for a specific game (allows immediate replay)
+  static clearGameCooldown(gameType: GameType): void {
+    try {
+      const lastPlayedData = localStorage.getItem(STORAGE_KEYS.LAST_PLAYED);
+      if (!lastPlayedData) return;
+      
+      const lastPlayed: Record<GameType, number> = JSON.parse(lastPlayedData);
+      delete lastPlayed[gameType];
+      localStorage.setItem(STORAGE_KEYS.LAST_PLAYED, JSON.stringify(lastPlayed));
+    } catch (error) {
+      console.error('Error clearing game cooldown:', error);
+    }
+  }
 }
 
 // Utility function to format time remaining

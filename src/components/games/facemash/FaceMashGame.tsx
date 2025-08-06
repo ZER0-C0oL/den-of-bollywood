@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import FaceMashActorFrame from './FaceMashActorFrame';
+import FaceMashImage from './FaceMashImage';
 import FaceMashHints from './FaceMashHints';
 import FaceMashGuessHistory from './FaceMashGuessHistory';
 import FaceMashControls from './FaceMashControls';
@@ -11,6 +12,7 @@ import { FaceMashGameData } from '../../../types/gameTypes';
 import { getTodaysFaceMashGame } from '../../../data/faceMashData';
 import { generateFaceMashShareText, FaceMashShareData } from '../../../utils/shareUtils';
 import { CooldownService } from '../../../services/cooldownService';
+import { GameStorageManager } from '../../../utils/gameStorage';
 
 const FaceMashGame: React.FC = () => {
   const [gameData, setGameData] = useState<FaceMashGameData | null>(null);
@@ -36,6 +38,13 @@ const FaceMashGame: React.FC = () => {
       if (cooldownState.isOnCooldown) {
         setCooldownTime(cooldownState.remainingTime);
         startCooldownTimer();
+        
+        // Load game progress even during cooldown for share functionality
+        const progress = FaceMashGameService.loadGameProgress(game.id);
+        setGameState(prevState => ({
+          ...prevState,
+          ...progress
+        }));
       } else {
         // Load game progress
         const progress = FaceMashGameService.loadGameProgress(game.id);
@@ -63,6 +72,22 @@ const FaceMashGame: React.FC = () => {
   const handleSubmitGuess = (guess: string) => {
     if (!gameData || gameState.gameCompleted || cooldownTime > 0) return;
     
+    // Check for duplicate guess before processing
+    const guessLower = guess.toLowerCase().trim();
+    const allGuesses = [
+      ...gameState.actor1State.guesses,
+      ...gameState.actor2State.guesses
+    ];
+    const isDuplicateGuess = allGuesses.some(prevGuess => 
+      prevGuess.toLowerCase().trim() === guessLower
+    );
+    
+    if (isDuplicateGuess) {
+      // Could add toast notification or visual feedback here
+      console.log('Duplicate guess detected:', guess);
+      return;
+    }
+    
     const { newState, isCorrect, target } = FaceMashGameService.processGuess(guess, gameData, gameState);
     
     // Set current target for visual feedback
@@ -83,8 +108,22 @@ const FaceMashGame: React.FC = () => {
   };
 
   const generateShareData = (): FaceMashShareData => {
+    if (!gameData) {
+      // Fallback data if gameData is not available
+      return {
+        gameId: 'unknown',
+        gameWon: false,
+        totalAttempts: 0,
+        maxAttempts: 10,
+        actor1Found: false,
+        actor2Found: false,
+        actor1Attempts: 0,
+        actor2Attempts: 0
+      };
+    }
+
     return {
-      gameId: gameData!.id,
+      gameId: gameData.id,
       gameWon: gameState.gameWon,
       totalAttempts: gameState.attempts,
       maxAttempts: 10, // This should come from GAME_CONFIG.MAX_ATTEMPTS
@@ -99,13 +138,50 @@ const FaceMashGame: React.FC = () => {
     setShowShareModal(true);
   };
 
+  const handleReplay = () => {
+    if (!gameData) return;
+    
+    // Clear game progress from storage
+    FaceMashGameService.clearGameProgress(gameData.id);
+    
+    // Clear cooldown state to allow immediate replay
+    GameStorageManager.clearGameCooldown('face-mash');
+    setCooldownTime(0);
+    CooldownService.clearTimer('face-mash');
+    
+    // Reset game state to initial values
+    setGameState({
+      actor1State: FaceMashGameService.initializeActorState(),
+      actor2State: FaceMashGameService.initializeActorState(),
+      attempts: 0,
+      gameCompleted: false,
+      gameWon: false,
+      showAnswers: false,
+      currentTarget: null
+    });
+    
+    // Close share modal if open
+    setShowShareModal(false);
+  };
+
   if (cooldownTime > 0) {
     return (
-      <FaceMashCooldownView
-        cooldownTime={cooldownTime}
-        formattedTime={CooldownService.getCooldownState('face-mash').formattedTime}
-        onShare={handleShare}
-      />
+      <>
+        <FaceMashCooldownView
+          cooldownTime={cooldownTime}
+          formattedTime={CooldownService.getCooldownState('face-mash').formattedTime}
+          onShare={handleShare}
+          onReplay={handleReplay}
+        />
+        
+        {/* Share Modal for cooldown view */}
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareText={generateFaceMashShareText(generateShareData())}
+          gameTitle="Face Mash Result"
+        />
+      </>
     );
   }
 
@@ -146,13 +222,7 @@ const FaceMashGame: React.FC = () => {
           />
           
           {/* Mashed Image */}
-          <div className="flex-shrink-0">
-            <img 
-              src={gameData.mashedImage} 
-              alt="Mashed face"
-              className="w-64 h-64 object-cover rounded-lg shadow-lg"
-            />
-          </div>
+          <FaceMashImage src={gameData.mashedImage} />
           
           {/* Right Actor Frame */}
           <FaceMashActorFrame
@@ -202,6 +272,7 @@ const FaceMashGame: React.FC = () => {
           gameCompleted={gameState.gameCompleted}
           onSubmitGuess={handleSubmitGuess}
           onShare={handleShare}
+          onReplay={handleReplay}
         />
       </div>
 

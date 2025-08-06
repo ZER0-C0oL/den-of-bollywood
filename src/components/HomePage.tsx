@@ -151,9 +151,7 @@ const HomePage: React.FC = () => {
                 <Link
                   to={game.route}
                   className={`block w-full text-center py-3 px-4 rounded-lg font-semibold transition-colors ${
-                    game.onCooldown && game.status === 'not_started'
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : game.status === 'solved'
+                    game.status === 'solved'
                       ? 'bg-green-600 text-white hover:bg-green-700'
                       : game.status === 'unsolved'
                       ? 'bg-red-600 text-white hover:bg-red-700'
@@ -161,15 +159,8 @@ const HomePage: React.FC = () => {
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-bollywood-red text-white hover:bg-red-700'
                   }`}
-                  onClick={(e) => {
-                    if (game.onCooldown && game.status === 'not_started') {
-                      e.preventDefault();
-                    }
-                  }}
                 >
-                  {game.onCooldown && game.status === 'not_started'
-                    ? 'On Cooldown' 
-                    : game.status === 'solved'
+                  {game.status === 'solved'
                     ? 'View Solution'
                     : game.status === 'unsolved'
                     ? 'View Attempt'

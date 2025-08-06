@@ -21,10 +21,8 @@ const FaceMashGuessHistory: React.FC<FaceMashGuessHistoryProps> = ({
   
   return (
     <div className={'bg-gray-50 p-3 rounded-lg ' + (isLeftActor ? 'text-left' : 'text-right')}>
-      <h5 className="font-medium text-gray-800 mb-2">
-        Your Guesses:
-      </h5>
-      <div className="flex flex-wrap gap-1">
+      <h5 className="font-medium text-gray-800 mb-2">Guesses:</h5>
+      <div className={`flex flex-wrap gap-1 ${isLeftActor ? 'justify-start' : 'justify-end'}`}>
         {actorState.guesses.map((guess, index) => {
           const isCorrect = guess.toLowerCase() === actor.name.toLowerCase();
           return (

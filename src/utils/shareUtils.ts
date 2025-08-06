@@ -83,9 +83,10 @@ const generateActorProgress = (
   if (attempts === 0) return '';
   
   const wrongAttempts = found ? attempts - 1 : attempts;
-  const progress = wrongEmoji.repeat(wrongAttempts);
+  const wrongEmojiArray = Array(wrongAttempts).fill(wrongEmoji);
+  const progress = wrongEmojiArray.join(' ');
   
-  return found ? `${progress}${successEmoji}` : progress;
+  return found ? (progress ? `${progress} ${successEmoji}` : successEmoji) : progress;
 };
 
 /**
@@ -137,11 +138,34 @@ export const shareViaWebAPI = async (text: string, title: string): Promise<boole
 };
 
 /**
+ * Safe encode URI component that handles malformed characters
+ */
+const safeEncodeURIComponent = (str: string): string => {
+  try {
+    return encodeURIComponent(str);
+  } catch (error) {
+    console.error('Error encoding URI component:', error);
+    // Fallback: sanitize the string and try again
+    const sanitized = str
+      .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs that can cause issues
+      .replace(/[^\u0020-\u007E]/g, '') // Keep only printable ASCII characters
+      .trim();
+    
+    try {
+      return encodeURIComponent(sanitized);
+    } catch (fallbackError) {
+      console.error('Fallback encoding also failed:', fallbackError);
+      return ''; // Return empty string as last resort
+    }
+  }
+};
+
+/**
  * Get shareable URLs for different platforms
  */
 export const getShareUrls = (text: string, title: string) => {
-  const encodedText = encodeURIComponent(text);
-  const encodedTitle = encodeURIComponent(title);
+  const encodedText = safeEncodeURIComponent(text);
+  const encodedTitle = safeEncodeURIComponent(title);
   
   // WhatsApp has issues with certain encoded characters, so we use a lighter encoding
   const whatsappText = text
@@ -154,7 +178,7 @@ export const getShareUrls = (text: string, title: string) => {
     whatsapp: `https://wa.me/?text=${whatsappText}`,
     twitter: `https://twitter.com/intent/tweet?text=${encodedText}`,
     telegram: `https://t.me/share/url?text=${encodedText}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_CONFIG.WEBSITE_URL)}&quote=${encodedText}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SHARE_CONFIG.WEBSITE_URL)}&title=${encodedTitle}&summary=${encodedText}`
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${safeEncodeURIComponent(SHARE_CONFIG.WEBSITE_URL)}&quote=${encodedText}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${safeEncodeURIComponent(SHARE_CONFIG.WEBSITE_URL)}&title=${encodedTitle}&summary=${encodedText}`
   };
 };

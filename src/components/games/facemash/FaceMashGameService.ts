@@ -26,7 +26,7 @@ export class FaceMashGameService {
    * Get ordered hints (Gender, Birthdate, Movies, Initials)
    */
   static getOrderedHints(hints: FaceMashHint[]): FaceMashHint[] {
-    const order = ['gender', 'birth_date', 'famous_movies', 'initials'];
+    const order = ['birth_year', 'famous_movies', 'initials'];
     return order.map(type => hints.find(hint => hint.type === type)).filter(Boolean) as FaceMashHint[];
   }
 
@@ -144,6 +144,25 @@ export class FaceMashGameService {
     target: 'actor1' | 'actor2' | null;
   } {
     const guessLower = guess.toLowerCase().trim();
+    
+    // Check if this guess has already been made for any actor
+    const allGuesses = [
+      ...currentState.actor1State.guesses,
+      ...currentState.actor2State.guesses
+    ];
+    const isDuplicateGuess = allGuesses.some(prevGuess => 
+      prevGuess.toLowerCase().trim() === guessLower
+    );
+    
+    if (isDuplicateGuess) {
+      // Return current state unchanged if it's a duplicate guess
+      return { 
+        newState: currentState, 
+        isCorrect: false, 
+        target: null 
+      };
+    }
+    
     const actor1Correct = guessLower === gameData.actor1.name.toLowerCase();
     const actor2Correct = guessLower === gameData.actor2.name.toLowerCase();
     const isCorrect = actor1Correct || actor2Correct;
@@ -153,7 +172,7 @@ export class FaceMashGameService {
     let target: 'actor1' | 'actor2' | null = null;
 
     if (isCorrect) {
-      // Correct guess
+      // Correct guess - automatically assign to the correct actor regardless of selection
       const correctTarget = actor1Correct ? 'actor1' : 'actor2';
       target = correctTarget;
       const targetHints = correctTarget === 'actor1' 
@@ -240,6 +259,13 @@ export class FaceMashGameService {
       startTime: Date.now() - (gameState.attempts * 60000),
       endTime: gameState.gameCompleted ? Date.now() : undefined
     });
+  }
+
+  /**
+   * Clear game progress and reset to initial state
+   */
+  static clearGameProgress(gameId: string): void {
+    GameStorageManager.clearGameProgress(gameId);
   }
 
   /**

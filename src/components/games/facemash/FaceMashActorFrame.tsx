@@ -20,6 +20,10 @@ const FaceMashActorFrame: React.FC<FaceMashActorFrameProps> = ({
   onFrameClick
 }) => {
   const actor = actorKey === 'actor1' ? gameData.actor1 : gameData.actor2;
+  
+  // Extract gender from hints for unknown actor image
+  const genderHint = actor.hints.find(hint => hint.type === 'gender');
+  const gender = genderHint?.content.toLowerCase() || 'unknown';
 
   return (
     <div 
@@ -36,12 +40,17 @@ const FaceMashActorFrame: React.FC<FaceMashActorFrameProps> = ({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-300 relative">
-            <svg className="w-20 h-20 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
-            <div className="absolute bottom-4 w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">?</span>
+          <div className="relative w-full h-full">
+            <img 
+              src={`/images/face-mash/unknown-${gender}.png`} 
+              alt="Unknown actor"
+              className="w-full h-full object-cover"
+            />
+            {/* Big question mark overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-40 h-40 flex items-center justify-center">
+                <span className="text-white font-bold text-8xl select-none pointer-events-none user-select-none">?</span>
+              </div>
             </div>
           </div>
         )}

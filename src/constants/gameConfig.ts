@@ -24,8 +24,6 @@ export const SHARE_CONFIG = {
     FACE_MASH: {
       WRONG_ATTEMPT: '🟥', // Red for wrong attempts
       SUCCESS: '🟩',       // Green for success
-      ALT_WRONG: '🔴',     // Alternative red (smaller)
-      ALT_SUCCESS: '✅'     // Alternative success
     },
     // Connections Game Colors (NYT style)
     CONNECTIONS: {

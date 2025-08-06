@@ -1,18 +1,21 @@
 import React from 'react';
 import { ConnectionsGameData } from '../../../types/gameTypes';
-import { CooldownState } from '../../../services/cooldownService';
 import { ConnectionsGameService } from './ConnectionsGameService';
 import { GameStorageManager } from '../../../utils/gameStorage';
 import { getTodaysConnectionsGame } from '../../../data/connectionsData';
 
 interface ConnectionsCooldownViewProps {
-  cooldownState: CooldownState;
+  cooldownTime: number;
+  formattedTime: string;
   onShare: () => void;
+  onReplay?: () => void;
 }
 
 const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
-  cooldownState,
-  onShare
+  cooldownTime,
+  formattedTime,
+  onShare,
+  onReplay
 }) => {
   const todaysGame = getTodaysConnectionsGame();
   const gameProgress = todaysGame ? GameStorageManager.getGameProgress(todaysGame.id) : null;
@@ -56,11 +59,10 @@ const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
   return (
     <>
       {/* Countdown Header */}
-      <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
-        <h2 className="text-xl font-bold mb-2">Next Challenge in:</h2>
-        <div className="text-2xl font-bold">
-          {cooldownState.formattedTime}
-        </div>
+            <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
+        <h2 className="text-xl font-bold">
+          Next Challenge in: {formattedTime}
+        </h2>
       </div>
 
       {/* Show game state based on progress */}
@@ -85,13 +87,21 @@ const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
 
           {/* Share button for completed games */}
           {gameProgress.completed && (
-            <div className="text-center">
+            <div className="text-center flex justify-center gap-4">
               <button
                 onClick={onShare}
                 className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
               >
                 📤 Share Result
               </button>
+              {onReplay && (
+                <button
+                  onClick={onReplay}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
+                >
+                  ↺ Replay
+                </button>
+              )}
             </div>
           )}
         </div>

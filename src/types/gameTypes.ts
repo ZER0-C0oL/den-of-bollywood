@@ -28,7 +28,7 @@ export interface ConnectionsGameData extends BaseGame {
 
 // Face Mash Game Types
 export interface FaceMashHint {
-  type: 'gender' | 'birth_date' | 'famous_movies' | 'initials';
+  type: 'gender' | 'birth_year' | 'famous_movies' | 'initials';
   content: string;
 }
 

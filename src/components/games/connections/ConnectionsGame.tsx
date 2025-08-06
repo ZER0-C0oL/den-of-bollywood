@@ -240,6 +240,33 @@ const ConnectionsGame: React.FC = () => {
     setShowShareModal(true);
   };
 
+  const handleReplay = () => {
+    if (!gameData) return;
+    
+    // Clear game progress from storage
+    GameStorageManager.clearGameProgress(gameData.id);
+    
+    // Clear cooldown state to allow immediate replay
+    GameStorageManager.clearGameCooldown('connections');
+    setCooldownState({
+      isOnCooldown: false,
+      remainingTime: 0,
+      formattedTime: ''
+    });
+    
+    // Reset all game state to initial values
+    setSelectedItems([]);
+    setShuffledItems(ConnectionsGameService.initializeShuffledItems(gameData));
+    setSolvedGroups([]);
+    setAttempts(0);
+    setGameCompleted(false);
+    setGameOver(false);
+    setAttemptResults([]);
+    
+    // Close share modal if open
+    setShowShareModal(false);
+  };
+
   const handleClearSelection = () => {
     setSelectedItems([]);
   };
@@ -256,8 +283,10 @@ const ConnectionsGame: React.FC = () => {
     return (
       <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
         <ConnectionsCooldownView 
-          cooldownState={cooldownState}
+          cooldownTime={cooldownState.remainingTime}
+          formattedTime={cooldownState.formattedTime}
           onShare={handleShare}
+          onReplay={handleReplay}
         />
       </GameLayout>
     );
@@ -293,12 +322,20 @@ const ConnectionsGame: React.FC = () => {
               <span>
                 {solvedGroups.length === 4 ? 'Congratulations! You solved all groups!' : 'Game Over! Better luck next time.'}
               </span>
-              <button
-                onClick={handleShare}
-                className="ml-4 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm border border-gray-300"
-              >
-                📤 Share Result
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleShare}
+                  className="ml-4 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm border border-gray-300"
+                >
+                  📤 Share Result
+                </button>
+                <button
+                  onClick={handleReplay}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                >
+                  ↺ Replay
+                </button>
+              </div>
             </div>
           </div>
         )}

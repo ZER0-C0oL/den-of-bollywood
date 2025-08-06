@@ -788,7 +788,7 @@ src/
     image: '/images/face-mash/002/actor1.png',
     hints: [
       { type: 'gender', content: 'Male' },
-      { type: 'birth_date', content: 'Born in 1985' },
+      { type: 'birth_year', content: 'Born in 1985' },
       { type: 'famous_movies', content: 'Known for: Gully Boy, Padmaavat' },
       { type: 'initials', content: 'R.S.' }
     ]
@@ -798,7 +798,7 @@ src/
     image: '/images/face-mash/002/actor2.png',
     hints: [
       { type: 'gender', content: 'Female' },
-      { type: 'birth_date', content: 'Born in 1986' },
+      { type: 'birth_year', content: 'Born in 1986' },
       { type: 'famous_movies', content: 'Known for: Padmaavat, Cocktail' },
       { type: 'initials', content: 'D.P.' }
     ]
