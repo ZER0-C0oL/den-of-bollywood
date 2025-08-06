@@ -1,24 +1,53 @@
 import React from 'react';
+import ShareModal from '../../ShareModal';
 import { ConnectionsGameData } from '../../../types/gameTypes';
 import { ConnectionsGameService } from './ConnectionsGameService';
 import { GameStorageManager } from '../../../utils/gameStorage';
 import { getTodaysConnectionsGame } from '../../../data/connectionsData';
+import { generateConnectionsShareText, ConnectionsShareData } from '../../../utils/shareUtils';
+import ConnectionsControls from './ConnectionsControls';
 
 interface ConnectionsCooldownViewProps {
   cooldownTime: number;
   formattedTime: string;
   onShare: () => void;
   onReplay?: () => void;
+  showShareModal: boolean;
+  onCloseShareModal: () => void;
 }
 
 const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
   cooldownTime,
   formattedTime,
   onShare,
-  onReplay
+  onReplay,
+  showShareModal,
+  onCloseShareModal
 }) => {
   const todaysGame = getTodaysConnectionsGame();
   const gameProgress = todaysGame ? GameStorageManager.getGameProgress(todaysGame.id) : null;
+
+  const generateShareData = (): ConnectionsShareData => {
+    if (!todaysGame || !gameProgress) {
+      return {
+        gameId: 'unknown',
+        gameWon: false,
+        totalAttempts: 0,
+        maxAttempts: 4,
+        solvedGroups: [],
+        attemptResults: []
+      };
+    }
+
+    return {
+      gameId: todaysGame.id,
+      gameWon: (gameProgress.gameState?.solvedGroups?.length || 0) === 4,
+      totalAttempts: gameProgress.attempts || 0,
+      maxAttempts: 4,
+      solvedGroups: gameProgress.gameState?.solvedGroups || [],
+      attemptResults: gameProgress.attemptResults || []
+    };
+  };
 
   const renderSolutionGroups = (gameData: ConnectionsGameData) => {
     return (
@@ -59,7 +88,7 @@ const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
   return (
     <>
       {/* Countdown Header */}
-            <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
+      <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
         <h2 className="text-xl font-bold">
           Next Challenge in: {formattedTime}
         </h2>
@@ -85,24 +114,18 @@ const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
           {/* Show all groups if game is completed */}
           {gameProgress.completed && renderSolutionGroups(todaysGame)}
 
-          {/* Share button for completed games */}
+          {/* Controls for completed games */}
           {gameProgress.completed && (
-            <div className="text-center flex justify-center gap-4">
-              <button
-                onClick={onShare}
-                className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
-              >
-                📤 Share Result
-              </button>
-              {onReplay && (
-                <button
-                  onClick={onReplay}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
-                >
-                  ↺ Replay
-                </button>
-              )}
-            </div>
+            <ConnectionsControls
+              selectedItems={[]}
+              onClearSelection={() => {}}
+              onSubmit={() => {}}
+              onShuffle={() => {}}
+              disabled={false}
+              gameCompleted={true}
+              onShare={onShare}
+              onReplay={onReplay}
+            />
           )}
         </div>
       ) : (
@@ -113,6 +136,14 @@ const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
           </p>
         </div>
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={onCloseShareModal}
+        shareText={generateConnectionsShareText(generateShareData())}
+        gameTitle="Connections Result"
+      />
     </>
   );
 };

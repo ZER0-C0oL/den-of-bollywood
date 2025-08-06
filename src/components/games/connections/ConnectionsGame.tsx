@@ -287,6 +287,8 @@ const ConnectionsGame: React.FC = () => {
           formattedTime={cooldownState.formattedTime}
           onShare={handleShare}
           onReplay={handleReplay}
+          showShareModal={showShareModal}
+          onCloseShareModal={() => setShowShareModal(false)}
         />
       </GameLayout>
     );
@@ -316,26 +318,23 @@ const ConnectionsGame: React.FC = () => {
         )}
 
         {/* Game Completed Message */}
+                {/* Game Complete Banner */}
         {gameCompleted && (
           <div className={`${solvedGroups.length === 4 ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} border px-4 py-3 rounded mb-4`}>
-            <div className="flex justify-between items-center">
-              <span>
+            <div className="text-center">
+              <span className="block mb-4">
                 {solvedGroups.length === 4 ? 'Congratulations! You solved all groups!' : 'Game Over! Better luck next time.'}
               </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleShare}
-                  className="ml-4 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm border border-gray-300"
-                >
-                  📤 Share Result
-                </button>
-                <button
-                  onClick={handleReplay}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
-                >
-                  ↺ Replay
-                </button>
-              </div>
+              <ConnectionsControls
+                selectedItems={[]}
+                onClearSelection={() => {}}
+                onSubmit={() => {}}
+                onShuffle={() => {}}
+                disabled={false}
+                gameCompleted={true}
+                onShare={handleShare}
+                onReplay={handleReplay}
+              />
             </div>
           </div>
         )}

@@ -7,6 +7,9 @@ interface ConnectionsControlsProps {
   onSubmit: () => void;
   onShuffle: () => void;
   disabled: boolean;
+  gameCompleted?: boolean;
+  onShare?: () => void;
+  onReplay?: () => void;
 }
 
 const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
@@ -14,8 +17,33 @@ const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
   onClearSelection,
   onSubmit,
   onShuffle,
-  disabled
+  disabled,
+  gameCompleted = false,
+  onShare,
+  onReplay
 }) => {
+  // Show share/replay buttons when game is completed
+  if (gameCompleted && onShare) {
+    return (
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={onShare}
+          className="bg-bollywood-teal text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500"
+        >
+          📤 Share Result
+        </button>
+        {onReplay && (
+          <button
+            onClick={onReplay}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
+          >
+            ↺ Replay
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-between mt-6">
       {/* Empty div for spacing */}
