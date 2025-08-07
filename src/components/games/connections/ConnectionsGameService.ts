@@ -181,7 +181,8 @@ export class ConnectionsGameService {
     attempts: number,
     solvedGroups: string[],
     attemptResults: ('correct' | 'one_away' | 'wrong')[],
-    isOneAway: boolean
+    isOneAway: boolean,
+    wrongAttempts: number
   ): {
     newAttempts: number;
     newAttemptResults: ('correct' | 'one_away' | 'wrong')[];
@@ -192,7 +193,8 @@ export class ConnectionsGameService {
     const newAttempts = attempts + 1;
     const newAttemptResults = [...attemptResults, isOneAway ? 'one_away' as const : 'wrong' as const];
     const errorMessage = this.getClosenessMessage(selectedItems);
-    const gameOver = newAttempts >= GAME_CONFIG.MAX_ATTEMPTS;
+    const newWrongAttempts = wrongAttempts + 1;
+    const gameOver = newWrongAttempts >= GAME_CONFIG.MAX_ATTEMPTS;
     const gameCompleted = gameOver;
 
     // Save progress

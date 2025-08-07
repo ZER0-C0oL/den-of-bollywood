@@ -21,6 +21,7 @@ const ConnectionsGame: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [solvedGroups, setSolvedGroups] = useState<string[]>([]);
   const [attempts, setAttempts] = useState(0);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [cooldownState, setCooldownState] = useState<CooldownState>({
     isOnCooldown: false,
@@ -84,6 +85,7 @@ const ConnectionsGame: React.FC = () => {
         }
         
         setAttempts(progress.attempts || 0);
+        setWrongAttempts(progress.attemptResults?.filter(result => result === 'wrong' || result === 'one_away').length || 0);
         setGameCompleted(finalGameCompleted);
         setSolvedGroups(finalSolvedGroups);
         setAttemptResults(progress.attemptResults || []);
@@ -213,10 +215,12 @@ const ConnectionsGame: React.FC = () => {
         attempts,
         solvedGroups,
         attemptResults,
-        matchResult.isOneAway
+        matchResult.isOneAway,
+        wrongAttempts
       );
       
       setAttempts(result.newAttempts);
+      setWrongAttempts(wrongAttempts + 1);
       setAttemptResults(result.newAttemptResults);
       setErrorMessage(result.errorMessage);
       setGameOver(result.gameOver);
@@ -259,6 +263,7 @@ const ConnectionsGame: React.FC = () => {
     setShuffledItems(ConnectionsGameService.initializeShuffledItems(gameData));
     setSolvedGroups([]);
     setAttempts(0);
+    setWrongAttempts(0);
     setGameCompleted(false);
     setGameOver(false);
     setAttemptResults([]);
@@ -300,13 +305,17 @@ const ConnectionsGame: React.FC = () => {
   return (
     <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
       <div className="max-w-4xl mx-auto">
-        {/* Game Status */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-600">
-            Attempts: {attempts}/{GAME_CONFIG.MAX_ATTEMPTS}
-          </div>
-          <div className="text-sm text-gray-600">
-            Groups found: {solvedGroups.length}/4
+        {/* Visual Attempt Indicator */}
+        <div className="flex justify-center items-center mb-6">
+          <div className="flex space-x-2">
+            {[...Array(GAME_CONFIG.MAX_ATTEMPTS)].map((_, index) => (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full ${
+                  index < wrongAttempts ? 'bg-red-500' : 'bg-green-500'
+                }`}
+              />
+            ))}
           </div>
         </div>
 
@@ -318,24 +327,13 @@ const ConnectionsGame: React.FC = () => {
         )}
 
         {/* Game Completed Message */}
-                {/* Game Complete Banner */}
         {gameCompleted && (
-          <div className={`${solvedGroups.length === 4 ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} border px-4 py-3 rounded mb-4`}>
-            <div className="text-center">
-              <span className="block mb-4">
-                {solvedGroups.length === 4 ? 'Congratulations! You solved all groups!' : 'Game Over! Better luck next time.'}
-              </span>
-              <ConnectionsControls
-                selectedItems={[]}
-                onClearSelection={() => {}}
-                onSubmit={() => {}}
-                onShuffle={() => {}}
-                disabled={false}
-                gameCompleted={true}
-                onShare={handleShare}
-                onReplay={handleReplay}
-              />
-            </div>
+          <div className="text-center mb-6">
+            <h3 className={`text-2xl font-bold mb-2 ${
+              solvedGroups.length === 4 ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {solvedGroups.length === 4 ? '🎉 Congratulations! You solved all groups!' : '😔 Game Over! Better luck next time.'}
+            </h3>
           </div>
         )}
 
@@ -345,6 +343,22 @@ const ConnectionsGame: React.FC = () => {
           solvedGroups={solvedGroups}
           gameOver={gameOver}
         />
+
+        {/* Game Completed Controls */}
+        {gameCompleted && (
+          <div className="mb-6">
+            <ConnectionsControls
+              selectedItems={[]}
+              onClearSelection={() => {}}
+              onSubmit={() => {}}
+              onShuffle={() => {}}
+              disabled={false}
+              gameCompleted={true}
+              onShare={handleShare}
+              onReplay={handleReplay}
+            />
+          </div>
+        )}
 
         {/* Game Grid - Hide only when all groups are solved or game is over */}
         {shouldShowGrid && (
