@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import { ConnectionsGameData } from '../../../types/gameTypes';
@@ -13,7 +13,7 @@ import {
 } from './ConnectionsGameService';
 import ConnectionsGrid from './ConnectionsGrid';
 import SolvedGroups from './SolvedGroups';
-import ConnectionsControls from './ConnectionsControls';
+import ConnectionsControls, { ConnectionsControlsRef } from './ConnectionsControls';
 import ConnectionsCooldownView from './ConnectionsCooldownView';
 
 const ConnectionsGame: React.FC = () => {
@@ -33,6 +33,12 @@ const ConnectionsGame: React.FC = () => {
   const [shuffledItems, setShuffledItems] = useState<{item: string, groupId: string}[]>([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [attemptResults, setAttemptResults] = useState<('correct' | 'one_away' | 'wrong')[]>([]);
+
+  const controlsRef = useRef<ConnectionsControlsRef>(null);
+
+  const handleFocusSubmit = () => {
+    controlsRef.current?.focusSubmit();
+  };
 
   useEffect(() => {
     const game = getTodaysConnectionsGame();
@@ -288,7 +294,6 @@ const ConnectionsGame: React.FC = () => {
     return (
       <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
         <ConnectionsCooldownView 
-          cooldownTime={cooldownState.remainingTime}
           formattedTime={cooldownState.formattedTime}
           onShare={handleShare}
           onReplay={handleReplay}
@@ -369,10 +374,12 @@ const ConnectionsGame: React.FC = () => {
               selectedItems={selectedItems}
               onItemClick={handleItemClick}
               disabled={isDisabled}
+              onFocusSubmit={handleFocusSubmit}
             />
             
             {/* All Controls (Shuffle, Clear, Submit) */}
             <ConnectionsControls
+              ref={controlsRef}
               selectedItems={selectedItems}
               onClearSelection={handleClearSelection}
               onSubmit={handleSubmit}

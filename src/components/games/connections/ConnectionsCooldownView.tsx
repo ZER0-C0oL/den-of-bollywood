@@ -8,7 +8,6 @@ import { generateConnectionsShareText, ConnectionsShareData } from '../../../uti
 import ConnectionsControls from './ConnectionsControls';
 
 interface ConnectionsCooldownViewProps {
-  cooldownTime: number;
   formattedTime: string;
   onShare: () => void;
   onReplay?: () => void;
@@ -17,7 +16,6 @@ interface ConnectionsCooldownViewProps {
 }
 
 const ConnectionsCooldownView: React.FC<ConnectionsCooldownViewProps> = ({
-  cooldownTime,
   formattedTime,
   onShare,
   onReplay,

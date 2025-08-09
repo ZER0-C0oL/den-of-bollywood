@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { SelectedItem } from './ConnectionsGameService';
 
 interface ConnectionsControlsProps {
@@ -12,7 +12,11 @@ interface ConnectionsControlsProps {
   onReplay?: () => void;
 }
 
-const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
+export interface ConnectionsControlsRef {
+  focusSubmit: () => void;
+}
+
+const ConnectionsControls = forwardRef<ConnectionsControlsRef, ConnectionsControlsProps>(({
   selectedItems,
   onClearSelection,
   onSubmit,
@@ -21,7 +25,15 @@ const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
   gameCompleted = false,
   onShare,
   onReplay
-}) => {
+}, ref) => {
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusSubmit: () => {
+      submitButtonRef.current?.focus();
+    }
+  }));
+
   // Show share/replay buttons when game is completed
   if (gameCompleted && onShare) {
     return (
@@ -59,11 +71,12 @@ const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
           Clear Selection
         </button>
         <button
+          ref={submitButtonRef}
           onClick={onSubmit}
           disabled={selectedItems.length !== 4 || disabled}
-          className="px-6 py-2 bg-bollywood-red text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+          className="px-6 py-2 bg-bollywood-red text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-bollywood-red focus:ring-offset-2"
         >
-          Submit ({selectedItems.length}/4)
+          Submit
         </button>
       </div>
 
@@ -91,6 +104,8 @@ const ConnectionsControls: React.FC<ConnectionsControlsProps> = ({
       </button>
     </div>
   );
-};
+});
+
+ConnectionsControls.displayName = 'ConnectionsControls';
 
 export default ConnectionsControls;

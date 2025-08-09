@@ -168,7 +168,6 @@ const FaceMashGame: React.FC = () => {
     return (
       <>
         <FaceMashCooldownView
-          cooldownTime={cooldownTime}
           formattedTime={CooldownService.getCooldownState('face-mash').formattedTime}
           onShare={handleShare}
           onReplay={handleReplay}

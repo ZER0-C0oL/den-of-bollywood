@@ -8,14 +8,12 @@ import FaceMashImage from './FaceMashImage';
 import FaceMashControls from './FaceMashControls';
 
 interface FaceMashCooldownViewProps {
-  cooldownTime: number;
   formattedTime: string;
   onShare: () => void;
   onReplay?: () => void;
 }
 
 const FaceMashCooldownView: React.FC<FaceMashCooldownViewProps> = ({
-  cooldownTime,
   formattedTime,
   onShare,
   onReplay
