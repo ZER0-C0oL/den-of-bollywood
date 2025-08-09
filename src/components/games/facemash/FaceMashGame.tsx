@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import FaceMashActorFrame from './FaceMashActorFrame';
@@ -9,12 +10,14 @@ import FaceMashControls from './FaceMashControls';
 import FaceMashCooldownView from './FaceMashCooldownView';
 import { FaceMashGameService, FaceMashGameState } from './FaceMashGameService';
 import { FaceMashGameData } from '../../../types/gameTypes';
-import { getTodaysFaceMashGame } from '../../../data/faceMashData';
+import { getTodaysFaceMashGame, getFaceMashGameById } from '../../../data/faceMashData';
 import { generateFaceMashShareText, FaceMashShareData } from '../../../utils/shareUtils';
 import { CooldownService } from '../../../services/cooldownService';
 import { GameStorageManager } from '../../../utils/gameStorage';
 
 const FaceMashGame: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [gameData, setGameData] = useState<FaceMashGameData | null>(null);
   const [gameState, setGameState] = useState<FaceMashGameState>({
     actor1State: FaceMashGameService.initializeActorState(),
@@ -28,33 +31,50 @@ const FaceMashGame: React.FC = () => {
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
 
+  const handleArchiveClick = () => {
+    navigate('/face-mash/archive');
+  };
+
   useEffect(() => {
-    const game = getTodaysFaceMashGame();
+    const gameId = searchParams.get('gameId');
+    let game: FaceMashGameData | null = null;
+    
+    if (gameId) {
+      // Archive game
+      game = getFaceMashGameById(gameId);
+    } else {
+      // Today's game
+      game = getTodaysFaceMashGame();
+    }
+    
     if (game) {
       setGameData(game);
       
-      // Check if game is on cooldown
-      const cooldownState = CooldownService.getCooldownState('face-mash');
-      if (cooldownState.isOnCooldown) {
-        setCooldownTime(cooldownState.remainingTime);
-        startCooldownTimer();
-        
-        // Load game progress even during cooldown for share functionality
-        const progress = FaceMashGameService.loadGameProgress(game.id);
-        setGameState(prevState => ({
-          ...prevState,
-          ...progress
-        }));
-      } else {
-        // Load game progress
-        const progress = FaceMashGameService.loadGameProgress(game.id);
-        setGameState(prevState => ({
-          ...prevState,
-          ...progress
-        }));
+      // Only check cooldown for today's game
+      if (!gameId) {
+        const cooldownState = CooldownService.getCooldownState('face-mash');
+        if (cooldownState.isOnCooldown) {
+          setCooldownTime(cooldownState.remainingTime);
+          startCooldownTimer();
+          
+          // Load game progress even during cooldown for share functionality
+          const progress = FaceMashGameService.loadGameProgress(game.id);
+          setGameState(prevState => ({
+            ...prevState,
+            ...progress
+          }));
+          return;
+        }
       }
+      
+      // Load game progress (works for both today's game and archive games)
+      const progress = FaceMashGameService.loadGameProgress(game.id);
+      setGameState(prevState => ({
+        ...prevState,
+        ...progress
+      }));
     }
-  }, []);
+  }, [searchParams]);
 
   const startCooldownTimer = () => {
     const cleanup = CooldownService.startCooldownTimer('face-mash', (cooldownState) => {
@@ -196,7 +216,31 @@ const FaceMashGame: React.FC = () => {
 
   return (
     <GameLayout title={gameData.title}>
-      {/* Game Completed Section */}
+      {/* Archive Button - Always show */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleArchiveClick}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Archive
+        </button>
+      </div>      {/* Game Completed Section */}
       {gameState.gameCompleted && (
         <div className="text-center">
           <div className={`p-6 rounded-lg ${gameState.gameWon ? 'bg-green-50' : 'bg-red-50'}`}>

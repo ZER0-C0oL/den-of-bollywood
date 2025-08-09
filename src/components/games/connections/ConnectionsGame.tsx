@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import { ConnectionsGameData } from '../../../types/gameTypes';
-import { getTodaysConnectionsGame } from '../../../data/connectionsData';
+import { getTodaysConnectionsGame, getConnectionsGameById } from '../../../data/connectionsData';
 import { generateConnectionsShareText, ConnectionsShareData } from '../../../utils/shareUtils';
 import { GameStorageManager } from '../../../utils/gameStorage';
 import { GAME_CONFIG } from '../../../constants/gameConfig';
@@ -17,12 +18,15 @@ import ConnectionsControls, { ConnectionsControlsRef } from './ConnectionsContro
 import ConnectionsCooldownView from './ConnectionsCooldownView';
 
 const ConnectionsGame: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [gameData, setGameData] = useState<ConnectionsGameData | null>(null);
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [solvedGroups, setSolvedGroups] = useState<string[]>([]);
   const [attempts, setAttempts] = useState(0);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const [isArchiveGame, setIsArchiveGame] = useState(false);
   const [cooldownState, setCooldownState] = useState<CooldownState>({
     isOnCooldown: false,
     remainingTime: 0,
@@ -40,82 +44,100 @@ const ConnectionsGame: React.FC = () => {
     controlsRef.current?.focusSubmit();
   };
 
+  const handleArchiveClick = () => {
+    navigate('/connections/archive');
+  };
+
   useEffect(() => {
-    const game = getTodaysConnectionsGame();
+    const gameId = searchParams.get('gameId');
+    let game: ConnectionsGameData | null = null;
+    
+    if (gameId) {
+      // Archive game
+      game = getConnectionsGameById(gameId);
+      setIsArchiveGame(true);
+    } else {
+      // Today's game
+      game = getTodaysConnectionsGame();
+      setIsArchiveGame(false);
+    }
+    
     if (game) {
       setGameData(game);
       
-      // Check cooldown state
-      const initialCooldownState = CooldownService.getCooldownState('connections');
-      setCooldownState(initialCooldownState);
+      // Only check cooldown for today's game
+      if (!gameId) {
+        const initialCooldownState = CooldownService.getCooldownState('connections');
+        setCooldownState(initialCooldownState);
+        
+        if (initialCooldownState.isOnCooldown) {
+          // Start cooldown timer
+          const cleanup = CooldownService.startCooldownTimer('connections', setCooldownState);
+          return cleanup;
+        }
+      }
       
-      if (initialCooldownState.isOnCooldown) {
-        // Start cooldown timer
-        const cleanup = CooldownService.startCooldownTimer('connections', setCooldownState);
-        return cleanup;
+      // Load game progress (works for both today's game and archive games)
+      const progress = ConnectionsGameService.loadGameProgress(game.id);
+      const loadedSolvedGroups = progress.solvedGroups || [];
+      
+      // Auto-complete if 3 groups are already solved
+      let finalSolvedGroups = loadedSolvedGroups;
+      let finalGameCompleted = progress.gameCompleted || false;
+      
+      if (loadedSolvedGroups.length === 3 && !finalGameCompleted) {
+        // Find the remaining unsolved group and auto-complete
+        const remainingGroup = game.groups.find(group => 
+          !loadedSolvedGroups.includes(group.id)
+        );
+        
+        if (remainingGroup) {
+          finalSolvedGroups = [...loadedSolvedGroups, remainingGroup.id];
+          finalGameCompleted = true;
+          
+          // Update storage with completed game
+          GameStorageManager.saveGameProgress(game.id, {
+            gameId: game.id,
+            status: 'completed',
+            attempts: progress.attempts || 0,
+            hintsUsed: 0,
+            startTime: Date.now() - ((progress.attempts || 0) * 30000),
+            endTime: Date.now(),
+            score: 100 - ((progress.attempts || 0) * 10),
+            completed: true,
+            gameState: {
+              solvedGroups: finalSolvedGroups
+            },
+            attemptResults: progress.attemptResults || []
+          });
+        }
+      }
+      
+      setAttempts(progress.attempts || 0);
+      setWrongAttempts(progress.attemptResults?.filter(result => result === 'wrong' || result === 'one_away').length || 0);
+      setGameCompleted(finalGameCompleted);
+      setSolvedGroups(finalSolvedGroups);
+      setAttemptResults(progress.attemptResults || []);
+      
+      // Initialize shuffled items excluding already solved groups
+      if (finalSolvedGroups.length > 0) {
+        const remainingItems = ConnectionsGameService.shuffleRemainingItems(game, finalSolvedGroups);
+        setShuffledItems(remainingItems);
       } else {
-        // Load game progress
-        const progress = ConnectionsGameService.loadGameProgress(game.id);
-        const loadedSolvedGroups = progress.solvedGroups || [];
+        setShuffledItems(ConnectionsGameService.initializeShuffledItems(game));
+      }
+      
+      // If game is completed and it's today's game, set cooldown state
+      if (finalGameCompleted && !gameId) {
+        const cooldownState = CooldownService.getCooldownState('connections');
+        setCooldownState(cooldownState);
         
-        // Auto-complete if 3 groups are already solved
-        let finalSolvedGroups = loadedSolvedGroups;
-        let finalGameCompleted = progress.gameCompleted || false;
-        
-        if (loadedSolvedGroups.length === 3 && !finalGameCompleted) {
-          // Find the remaining unsolved group and auto-complete
-          const remainingGroup = game.groups.find(group => 
-            !loadedSolvedGroups.includes(group.id)
-          );
-          
-          if (remainingGroup) {
-            finalSolvedGroups = [...loadedSolvedGroups, remainingGroup.id];
-            finalGameCompleted = true;
-            
-            // Update storage with completed game
-            GameStorageManager.saveGameProgress(game.id, {
-              gameId: game.id,
-              status: 'completed',
-              attempts: progress.attempts || 0,
-              hintsUsed: 0,
-              startTime: Date.now() - ((progress.attempts || 0) * 30000),
-              endTime: Date.now(),
-              score: 100 - ((progress.attempts || 0) * 10),
-              completed: true,
-              gameState: {
-                solvedGroups: finalSolvedGroups
-              },
-              attemptResults: progress.attemptResults || []
-            });
-          }
-        }
-        
-        setAttempts(progress.attempts || 0);
-        setWrongAttempts(progress.attemptResults?.filter(result => result === 'wrong' || result === 'one_away').length || 0);
-        setGameCompleted(finalGameCompleted);
-        setSolvedGroups(finalSolvedGroups);
-        setAttemptResults(progress.attemptResults || []);
-        
-        // Initialize shuffled items excluding already solved groups
-        if (finalSolvedGroups.length > 0) {
-          const remainingItems = ConnectionsGameService.shuffleRemainingItems(game, finalSolvedGroups);
-          setShuffledItems(remainingItems);
-        } else {
-          setShuffledItems(ConnectionsGameService.initializeShuffledItems(game));
-        }
-        
-        // If game is completed, set cooldown state
-        if (finalGameCompleted) {
-          const cooldownState = CooldownService.getCooldownState('connections');
-          setCooldownState(cooldownState);
-          
-          if (cooldownState.isOnCooldown) {
-            CooldownService.startCooldownTimer('connections', setCooldownState);
-          }
+        if (cooldownState.isOnCooldown) {
+          CooldownService.startCooldownTimer('connections', setCooldownState);
         }
       }
     }
-  }, []);
+  }, [searchParams]);
 
   const handleItemClick = (item: string, groupId: string) => {
     if (gameCompleted || cooldownState.isOnCooldown) return;
@@ -310,6 +332,21 @@ const ConnectionsGame: React.FC = () => {
   return (
     <GameLayout title="Connections" description="Find groups of 4 related Bollywood items">
       <div className="max-w-4xl mx-auto">
+        {/* Header with Archive Button */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex-1"></div>
+          <button
+            onClick={handleArchiveClick}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-sm"
+            title="View past games"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Archive
+          </button>
+        </div>
+
         {/* Visual Attempt Indicator */}
         <div className="flex justify-center items-center mb-6">
           <div className="flex space-x-2">
