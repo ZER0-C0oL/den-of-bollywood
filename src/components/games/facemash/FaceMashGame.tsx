@@ -195,6 +195,7 @@ const FaceMashGame: React.FC = () => {
           formattedTime={CooldownService.getCooldownState('face-mash').formattedTime}
           onShare={handleShare}
           onReplay={handleReplay}
+          onArchive={handleArchiveClick}
         />
         
         {/* Share Modal for cooldown view */}
