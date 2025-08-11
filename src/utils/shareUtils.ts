@@ -21,6 +21,17 @@ export interface ConnectionsShareData {
   attemptResults: ('correct' | 'one_away' | 'wrong')[];
 }
 
+export interface PlotFusionShareData {
+  gameId: string;
+  gameWon: boolean;
+  totalAttempts: number;
+  maxAttempts: number;
+  movie1Found: boolean;
+  movie2Found: boolean;
+  movie1Attempts: number;
+  movie2Attempts: number;
+}
+
 /**
  * Generate share text for Face Mash game
  */
@@ -68,6 +79,27 @@ export const generateConnectionsShareText = (data: ConnectionsShareData): string
 ${grid}
 
 ${statusLine}
+${SHARE_CONFIG.WEBSITE_URL}`.trim();
+};
+
+/**
+ * Generate share text for Plot Fusion game
+ */
+export const generatePlotFusionShareText = (data: PlotFusionShareData): string => {
+  const gameNumber = SHARE_CONFIG.getGameNumber(data.gameId);
+  const { WRONG_ATTEMPT, SUCCESS } = SHARE_CONFIG.COLORS.FACE_MASH; // Reuse Face Mash colors
+  
+  // Generate progress for Movie 1
+  const movie1Progress = generateActorProgress(data.movie1Attempts, data.movie1Found, WRONG_ATTEMPT, SUCCESS);
+  
+  // Generate progress for Movie 2
+  const movie2Progress = generateActorProgress(data.movie2Attempts, data.movie2Found, WRONG_ATTEMPT, SUCCESS);
+
+  return `🎬 Plot Fusion #${gameNumber}
+
+Movie 1: ${movie1Progress}
+Movie 2: ${movie2Progress}
+
 ${SHARE_CONFIG.WEBSITE_URL}`.trim();
 };
 

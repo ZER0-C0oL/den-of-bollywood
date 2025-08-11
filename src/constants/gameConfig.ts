@@ -12,7 +12,8 @@ export const GAME_CONFIG = {
   // Game identifiers
   GAMES: {
     CONNECTIONS: 'connections',
-    FACE_MASH: 'face-mash'
+    FACE_MASH: 'face-mash',
+    PLOT_FUSION: 'plot-fusion'
   }
 } as const;
 

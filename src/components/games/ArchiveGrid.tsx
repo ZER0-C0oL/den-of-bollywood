@@ -1,10 +1,10 @@
 import React from 'react';
-import { ConnectionsGameData, FaceMashGameData } from '../../types/gameTypes';
+import { ConnectionsGameData, FaceMashGameData, PlotFusionGameData } from '../../types/gameTypes';
 
 interface ArchiveGridProps {
-  games: (ConnectionsGameData | FaceMashGameData)[];
+  games: (ConnectionsGameData | FaceMashGameData | PlotFusionGameData)[];
   onGameSelect: (gameId: string) => void;
-  gameType: 'connections' | 'face-mash';
+  gameType: 'connections' | 'face-mash' | 'plot-fusion';
 }
 
 const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, onGameSelect, gameType }) => {

@@ -48,6 +48,27 @@ export interface FaceMashGameData extends BaseGame {
   date: string;
 }
 
+// Plot Fusion Game Types
+export interface PlotFusionHint {
+  type: 'year' | 'director' | 'cast';
+  text: string;
+}
+
+export interface PlotFusionMovie {
+  name: string;
+  hints: PlotFusionHint[];
+}
+
+export interface PlotFusionGameData extends BaseGame {
+  type: 'plot-fusion';
+  fusedPlot: string;
+  movies: {
+    movie1: PlotFusionMovie;
+    movie2: PlotFusionMovie;
+  };
+  date: string;
+}
+
 // Game Progress Tracking
 export interface GameProgress {
   gameId: string;
@@ -69,6 +90,17 @@ export interface GameProgress {
       hintsRevealed: number;
     };
     actor2State?: {
+      found: boolean;
+      guesses: string[];
+      hintsRevealed: number;
+    };
+    // For PlotFusion: movie states
+    movie1State?: {
+      found: boolean;
+      guesses: string[];
+      hintsRevealed: number;
+    };
+    movie2State?: {
       found: boolean;
       guesses: string[];
       hintsRevealed: number;

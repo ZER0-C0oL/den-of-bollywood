@@ -93,7 +93,22 @@ export class GameStorageManager {
         return this.getDefaultUserStats();
       }
       
-      return JSON.parse(statsData);
+      const stats = JSON.parse(statsData);
+      
+      // Migration: Add missing game types to existing stats
+      const defaultStats = this.getDefaultUserStats();
+      if (!stats.gameStats) {
+        stats.gameStats = defaultStats.gameStats;
+      } else {
+        // Ensure all game types exist
+        for (const gameType of ['connections', 'face-mash', 'plot-fusion'] as const) {
+          if (!stats.gameStats[gameType]) {
+            stats.gameStats[gameType] = defaultStats.gameStats[gameType];
+          }
+        }
+      }
+      
+      return stats;
     } catch (error) {
       console.error('Error getting user stats:', error);
       return this.getDefaultUserStats();
@@ -166,6 +181,12 @@ export class GameStorageManager {
           averageAttempts: 0
         },
         'face-mash': {
+          played: 0,
+          completed: 0,
+          bestScore: 0,
+          averageAttempts: 0
+        },
+        'plot-fusion': {
           played: 0,
           completed: 0,
           bestScore: 0,

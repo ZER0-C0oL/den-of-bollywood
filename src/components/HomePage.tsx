@@ -5,30 +5,37 @@ import { GameStorageManager } from '../utils/gameStorage';
 import { GAME_CONFIG } from '../constants/gameConfig';
 import { getTodaysConnectionsGame } from '../data/connectionsData';
 import { getTodaysFaceMashGame } from '../data/faceMashData';
+import { getTodaysPlotFusionGame } from '../data/plotFusionData';
 
 const HomePage: React.FC = () => {
   const userStats = GameStorageManager.getUserStats();
   const connectionsOnCooldown = GameStorageManager.isGameOnCooldown('connections');
   const faceMashOnCooldown = GameStorageManager.isGameOnCooldown('face-mash');
+  const plotFusionOnCooldown = GameStorageManager.isGameOnCooldown('plot-fusion');
 
   // Check if today's games are completed
   const todaysConnectionsGame = getTodaysConnectionsGame();
   const todaysFaceMashGame = getTodaysFaceMashGame();
+  const todaysPlotFusionGame = getTodaysPlotFusionGame();
   
   const connectionsProgress = todaysConnectionsGame ? 
     GameStorageManager.getGameProgress(todaysConnectionsGame.id) : null;
   const faceMashProgress = todaysFaceMashGame ? 
     GameStorageManager.getGameProgress(todaysFaceMashGame.id) : null;
+  const plotFusionProgress = todaysPlotFusionGame ? 
+    GameStorageManager.getGameProgress(todaysPlotFusionGame.id) : null;
 
   // Function to determine game status
-  const getGameStatus = (progress: any, gameType: 'connections' | 'face-mash') => {
+  const getGameStatus = (progress: any, gameType: 'connections' | 'face-mash' | 'plot-fusion') => {
     if (!progress) return 'not_started';
     
     if (progress.completed) {
       if (gameType === 'connections') {
         return progress.gameState?.solvedGroups?.length === 4 ? 'solved' : 'unsolved';
-      } else {
+      } else if (gameType === 'face-mash') {
         return (progress.gameState?.actor1State?.found && progress.gameState?.actor2State?.found) ? 'solved' : 'unsolved';
+      } else if (gameType === 'plot-fusion') {
+        return (progress.gameState?.movie1State?.found && progress.gameState?.movie2State?.found) ? 'solved' : 'unsolved';
       }
     }
     
@@ -38,6 +45,7 @@ const HomePage: React.FC = () => {
 
   const connectionsStatus = getGameStatus(connectionsProgress, 'connections');
   const faceMashStatus = getGameStatus(faceMashProgress, 'face-mash');
+  const plotFusionStatus = getGameStatus(plotFusionProgress, 'plot-fusion');
 
   const gameCards = [
     {
@@ -57,6 +65,15 @@ const HomePage: React.FC = () => {
       onCooldown: faceMashOnCooldown,
       status: faceMashStatus,
       stats: userStats.gameStats['face-mash']
+    },
+    {
+      title: 'Plot Fusion',
+      description: 'Two movie plots combined into one! Can you identify both Bollywood films?',
+      route: '/plot-fusion',
+      gameType: 'plot-fusion' as const,
+      onCooldown: plotFusionOnCooldown,
+      status: plotFusionStatus,
+      stats: userStats.gameStats['plot-fusion']
     }
   ];
 
@@ -133,16 +150,16 @@ const HomePage: React.FC = () => {
                 {/* Game Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-6 text-sm">
                   <div className="bg-gray-50 p-3 rounded text-center">
-                    <div className="font-semibold text-gray-800">{game.stats.played}</div>
+                    <div className="font-semibold text-gray-800">{game.stats?.played || 0}</div>
                     <div className="text-gray-600 text-xs">Played</div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded text-center">
-                    <div className="font-semibold text-gray-800">{game.stats.completed}</div>
+                    <div className="font-semibold text-gray-800">{game.stats?.completed || 0}</div>
                     <div className="text-gray-600 text-xs">Completed</div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded text-center">
                     <div className="font-semibold text-gray-800">
-                      {game.stats.averageAttempts > 0 ? Math.round(game.stats.averageAttempts * 10) / 10 : '-'}
+                      {game.stats?.averageAttempts && game.stats.averageAttempts > 0 ? Math.round(game.stats.averageAttempts * 10) / 10 : '-'}
                     </div>
                     <div className="text-gray-600 text-xs">Avg Attempts</div>
                   </div>
