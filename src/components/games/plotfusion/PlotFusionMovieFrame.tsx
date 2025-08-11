@@ -81,13 +81,6 @@ const PlotFusionMovieFrame: React.FC<PlotFusionMovieFrameProps> = ({
           </div>
         )}
       </div>
-
-      {/* Attempt Counter */}
-      {movieState.guesses.length > 0 && (
-        <div className="absolute bottom-2 left-2 text-xs text-gray-600">
-          {movieState.guesses.length} {movieState.guesses.length === 1 ? 'attempt' : 'attempts'}
-        </div>
-      )}
     </div>
   );
 };

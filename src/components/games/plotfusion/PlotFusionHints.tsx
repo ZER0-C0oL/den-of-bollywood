@@ -1,20 +1,26 @@
 import React from 'react';
 import { PlotFusionGameData } from '../../../types/gameTypes';
 import { PlotFusionMovieState, PlotFusionGameService } from './PlotFusionGameService';
+import { getMovieHints } from '../../../data/moviesData';
 
 interface PlotFusionHintsProps {
   movieKey: 'movie1' | 'movie2';
   gameData: PlotFusionGameData;
   movieState: PlotFusionMovieState;
+  showAnswers?: boolean;
 }
 
 const PlotFusionHints: React.FC<PlotFusionHintsProps> = ({
   movieKey,
   gameData,
-  movieState
+  movieState,
+  showAnswers = false
 }) => {
   const movie = gameData.movies[movieKey];
   const movieLabel = movieKey === 'movie1' ? 'Movie 1' : 'Movie 2';
+  
+  // Get hints from centralized movie data
+  const hints = getMovieHints(movie.movieId);
 
   const getHintIcon = (hintType: string) => {
     switch (hintType) {
@@ -37,8 +43,8 @@ const PlotFusionHints: React.FC<PlotFusionHintsProps> = ({
       </h4>
       
       <div className="space-y-2">
-        {movie.hints.map((hint, index) => {
-          const shouldReveal = PlotFusionGameService.shouldRevealHint(movieState, index);
+        {hints.map((hint, index) => {
+          const shouldReveal = showAnswers || PlotFusionGameService.shouldRevealHint(movieState, index);
           
           return (
             <div
@@ -59,12 +65,6 @@ const PlotFusionHints: React.FC<PlotFusionHintsProps> = ({
           );
         })}
       </div>
-      
-      {movieState.hintsRevealed === 0 && (
-        <p className="text-xs text-gray-500 mt-3 italic">
-          Hints will be revealed after wrong guesses
-        </p>
-      )}
     </div>
   );
 };

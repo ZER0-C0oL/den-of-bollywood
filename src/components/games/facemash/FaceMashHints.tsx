@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaceMashGameData } from '../../../types/gameTypes';
 import { ActorState, FaceMashGameService } from './FaceMashGameService';
+import { getActorHints } from '../../../data/actorsData';
 
 interface FaceMashHintsProps {
   actorKey: 'actor1' | 'actor2';
@@ -14,7 +15,8 @@ const FaceMashHints: React.FC<FaceMashHintsProps> = ({
   actorState
 }) => {
   const actor = actorKey === 'actor1' ? gameData.actor1 : gameData.actor2;
-  const orderedHints = FaceMashGameService.getOrderedHints(actor.hints);
+  const hints = getActorHints(actor.actorId);
+  const orderedHints = FaceMashGameService.getOrderedHints(hints);
   
   if (actorState.hintsRevealed === 0) return null;
   

@@ -9,24 +9,14 @@ export const faceMashGamesData: FaceMashGameData[] = [
     route: '/face-mash',
     date: '2025-08-01',
     actor1: {
+      actorId: '1', // Shah Rukh Khan
       name: 'Shah Rukh Khan',
-      image: '/images/face-mash/001/actor1.webp',
-      hints: [
-        { type: 'gender', content: 'Male' },
-        { type: 'birth_year', content: '1965' },
-        { type: 'famous_movies', content: 'Dilwale Dulhania Le Jayenge, My Name is Khan' },
-        { type: 'initials', content: 'S.R.K.' }
-      ]
+      image: '/images/face-mash/001/actor1.webp'
     },
     actor2: {
+      actorId: '28', // Aishwarya Rai
       name: 'Aishwarya Rai',
-      image: '/images/face-mash/001/actor2.jpg',
-      hints: [
-        { type: 'gender', content: 'Female' },
-        { type: 'birth_year', content: '1973' },
-        { type: 'famous_movies', content: 'Devdas, Jodha Akbar' },
-        { type: 'initials', content: 'A.R' }
-      ]
+      image: '/images/face-mash/001/actor2.jpg'
     },
     mashedImage: '/images/face-mash/001/morphed.png'
   },
@@ -38,24 +28,14 @@ export const faceMashGamesData: FaceMashGameData[] = [
     route: '/face-mash',
     date: '2025-08-02',
     actor1: {
+      actorId: '7', // Ranveer Singh
       name: 'Ranveer Singh',
-      image: '/images/face-mash/002/actor1.jpg',
-      hints: [
-        { type: 'gender', content: 'Male' },
-        { type: 'birth_year', content: '1985' },
-        { type: 'famous_movies', content: 'Gully Boy, Padmaavat' },
-        { type: 'initials', content: 'R.S.' }
-      ]
+      image: '/images/face-mash/002/actor1.jpg'
     },
     actor2: {
+      actorId: '11', // Deepika Padukone
       name: 'Deepika Padukone',
-      image: '/images/face-mash/002/actor2.jpg',
-      hints: [
-        { type: 'gender', content: 'Female' },
-        { type: 'birth_year', content: '1986' },
-        { type: 'famous_movies', content: 'Om Shanti Om, Bajirao Mastani' },
-        { type: 'initials', content: 'D.P.' }
-      ]
+      image: '/images/face-mash/002/actor2.jpg'
     },
     mashedImage: '/images/face-mash/002/morphed.png'
   },
@@ -67,24 +47,14 @@ export const faceMashGamesData: FaceMashGameData[] = [
     route: '/face-mash',
     date: '2025-08-03',
     actor1: {
+      actorId: '3', // Aamir Khan
       name: 'Aamir Khan',
-      image: '/images/face-mash/003/actor1.jpg',
-      hints: [
-        { type: 'gender', content: 'Male' },
-        { type: 'birth_year', content: '1965' },
-        { type: 'famous_movies', content: 'Lagaan, 3 Idiots' },
-        { type: 'initials', content: 'A.K.' }
-      ]
+      image: '/images/face-mash/003/actor1.jpg'
     },
     actor2: {
+      actorId: '13', // Kareena Kapoor
       name: 'Kareena Kapoor',
-      image: '/images/face-mash/003/actor2.jpg',
-      hints: [
-        { type: 'gender', content: 'Female' },
-        { type: 'birth_year', content: '1980' },
-        { type: 'famous_movies', content: 'Jab We Met, 3 Idiots' },
-        { type: 'initials', content: 'K.K.' }
-      ]
+      image: '/images/face-mash/003/actor2.jpg'
     },
     mashedImage: '/images/face-mash/003/morphed.png'
   },
@@ -96,24 +66,14 @@ export const faceMashGamesData: FaceMashGameData[] = [
     route: '/face-mash',
     date: '2025-08-04',
     actor1: {
+      actorId: '5', // Hrithik Roshan
       name: 'Hrithik Roshan',
-      image: '/images/face-mash/004/actor1.jpg',
-      hints: [
-        { type: 'gender', content: 'Male' },
-        { type: 'birth_year', content: '1974' },
-        { type: 'famous_movies', content: 'Kaho Naa... Pyaar Hai, War' },
-        { type: 'initials', content: 'H.R.' }
-      ]
+      image: '/images/face-mash/004/actor1.jpg'
     },
     actor2: {
+      actorId: '12', // Priyanka Chopra
       name: 'Priyanka Chopra',
-      image: '/images/face-mash/004/actor2.jpg',
-      hints: [
-        { type: 'gender', content: 'Female' },
-        { type: 'birth_year', content: '1982' },
-        { type: 'famous_movies', content: 'Fashion, Barfi!' },
-        { type: 'initials', content: 'P.C.' }
-      ]
+      image: '/images/face-mash/004/actor2.jpg'
     },
     mashedImage: '/images/face-mash/004/morphed.png'
   },
@@ -125,41 +85,31 @@ export const faceMashGamesData: FaceMashGameData[] = [
     route: '/face-mash',
     date: '2025-08-05',
     actor1: {
-      name: 'Akshay Kumar',
-      image: '/images/face-mash/005/actor1.jpg',
-      hints: [
-        { type: 'gender', content: 'Male' },
-        { type: 'birth_year', content: '1967' },
-        { type: 'famous_movies', content: 'Hera Pheri, Khiladi' },
-        { type: 'initials', content: 'A.K.' }
-      ]
+      actorId: '2', // Salman Khan
+      name: 'Salman Khan',
+      image: '/images/face-mash/005/actor1.jpg'
     },
     actor2: {
+      actorId: '14', // Katrina Kaif
       name: 'Katrina Kaif',
-      image: '/images/face-mash/005/actor2.jpg',
-      hints: [
-        { type: 'gender', content: 'Female' },
-        { type: 'birth_year', content: '1983' },
-        { type: 'famous_movies', content: 'Zindagi Na Milegi Dobara, Tiger Zinda Hai' },
-        { type: 'initials', content: 'K.K.' }
-      ]
+      image: '/images/face-mash/005/actor2.jpg'
     },
     mashedImage: '/images/face-mash/005/morphed.png'
   }
 ];
 
-// Function to get today's face mash game
+// Function to get today's Face Mash game
 export const getTodaysFaceMashGame = (): FaceMashGameData | null => {
   const today = new Date().toISOString().split('T')[0];
   return faceMashGamesData.find(game => game.date === today) || faceMashGamesData[0];
 };
 
-// Function to get face mash game by ID
+// Function to get Face Mash game by ID
 export const getFaceMashGameById = (gameId: string): FaceMashGameData | null => {
   return faceMashGamesData.find(game => game.id === gameId) || null;
 };
 
-// Function to get all face mash games (for archive)
+// Function to get all Face Mash games for archive
 export const getAllFaceMashGames = (): FaceMashGameData[] => {
   return faceMashGamesData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };

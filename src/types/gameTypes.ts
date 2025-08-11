@@ -32,31 +32,24 @@ export interface FaceMashHint {
   content: string;
 }
 
+export interface FaceMashActor {
+  actorId: string;
+  name: string;
+  image: string;
+}
+
 export interface FaceMashGameData extends BaseGame {
   type: 'face-mash';
-  actor1: {
-    name: string;
-    image: string;
-    hints: FaceMashHint[];
-  };
-  actor2: {
-    name: string;
-    image: string;
-    hints: FaceMashHint[];
-  };
+  actor1: FaceMashActor;
+  actor2: FaceMashActor;
   mashedImage: string;
   date: string;
 }
 
 // Plot Fusion Game Types
-export interface PlotFusionHint {
-  type: 'year' | 'director' | 'cast';
-  text: string;
-}
-
 export interface PlotFusionMovie {
+  movieId: string;
   name: string;
-  hints: PlotFusionHint[];
 }
 
 export interface PlotFusionGameData extends BaseGame {

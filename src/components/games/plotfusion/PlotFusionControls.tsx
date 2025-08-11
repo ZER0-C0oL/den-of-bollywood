@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { searchMovies, SearchableMovieEntry } from '../../../data/moviesData';
 
 interface PlotFusionControlsProps {
   gameCompleted: boolean;
@@ -14,19 +15,111 @@ const PlotFusionControls: React.FC<PlotFusionControlsProps> = ({
   onReplay
 }) => {
   const [guess, setGuess] = useState('');
+  const [suggestions, setSuggestions] = useState<SearchableMovieEntry[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (guess.trim() && !gameCompleted) {
       onSubmitGuess(guess.trim());
       setGuess('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
       inputRef.current?.focus();
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGuess(e.target.value);
+    const value = e.target.value;
+    setGuess(value);
+    
+    if (value.trim().length > 0) {
+      const movieSuggestions = searchMovies(value, 8);
+      setSuggestions(movieSuggestions);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+    setSelectedSuggestionIndex(-1); // Reset selection when input changes
+  };
+
+  const handleSuggestionClick = (movieName: string) => {
+    setGuess(movieName);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Enter') {
+        handleSubmit(e as any);
+      }
+      return;
+    }
+
+    const visibleSuggestions = suggestions.slice(0, 8);
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < visibleSuggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : visibleSuggestions.length - 1
+        );
+        break;
+      
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < visibleSuggestions.length) {
+          handleSuggestionClick(visibleSuggestions[selectedSuggestionIndex].name);
+        } else {
+          handleSubmit(e as any);
+        }
+        break;
+      
+      case 'Escape':
+        e.preventDefault();
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+      
+      default:
+        break;
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (guess.trim().length > 0 && suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
   };
 
   if (gameCompleted) {
@@ -81,15 +174,41 @@ const PlotFusionControls: React.FC<PlotFusionControlsProps> = ({
   return (
     <div className="mt-6">
       <form onSubmit={handleSubmit} className="flex gap-4 max-w-md mx-auto">
-        <input
-          ref={inputRef}
-          type="text"
-          value={guess}
-          onChange={handleInputChange}
-          placeholder="Enter movie name..."
-          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          autoComplete="off"
-        />
+        <div className="flex-1 relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={guess}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter movie name..."
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            autoComplete="off"
+          />
+          
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div 
+              ref={suggestionsRef}
+              className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto"
+            >
+              {suggestions.map((movie, index) => (
+                <div
+                  key={index}
+                  className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                    index === selectedSuggestionIndex 
+                      ? 'bg-blue-600 text-white' 
+                      : 'hover:bg-blue-50'
+                  }`}
+                  onClick={() => handleSuggestionClick(movie.name)}
+                >
+                  <div className="font-medium">{movie.name}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="submit"
           disabled={!guess.trim() || gameCompleted}
@@ -98,10 +217,6 @@ const PlotFusionControls: React.FC<PlotFusionControlsProps> = ({
           Submit
         </button>
       </form>
-      
-      <div className="text-center mt-4 text-sm text-gray-600">
-        <p>Click on a movie frame to target your guess, or we'll decide for you!</p>
-      </div>
     </div>
   );
 };

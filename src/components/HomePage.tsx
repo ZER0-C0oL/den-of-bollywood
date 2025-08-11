@@ -215,11 +215,6 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Footer Info */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>New games and features coming soon! Follow your progress and compete with friends.</p>
-        </div>
       </div>
     </GameLayout>
   );

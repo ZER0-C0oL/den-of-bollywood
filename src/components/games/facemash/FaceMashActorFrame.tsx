@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaceMashGameData } from '../../../types/gameTypes';
 import { ActorState } from './FaceMashGameService';
+import { getActorById } from '../../../data/actorsData';
 
 interface FaceMashActorFrameProps {
   actorKey: 'actor1' | 'actor2';
@@ -21,9 +22,9 @@ const FaceMashActorFrame: React.FC<FaceMashActorFrameProps> = ({
 }) => {
   const actor = actorKey === 'actor1' ? gameData.actor1 : gameData.actor2;
   
-  // Extract gender from hints for unknown actor image
-  const genderHint = actor.hints.find(hint => hint.type === 'gender');
-  const gender = genderHint?.content.toLowerCase() || 'unknown';
+  // Get actor details from centralized data to get gender
+  const actorDetails = getActorById(actor.actorId);
+  const gender = actorDetails?.gender.toLowerCase() || 'unknown';
 
   return (
     <div 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
+import Toast from '../../Toast';
 import { PlotFusionGameService, PlotFusionGameState } from './PlotFusionGameService';
 import { PlotFusionGameData } from '../../../types/gameTypes';
 import { getTodaysPlotFusionGame, getPlotFusionGameById } from '../../../data/plotFusionData';
@@ -29,6 +30,8 @@ const PlotFusionGame: React.FC = () => {
   });
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const handleArchiveClick = () => {
     navigate('/plot-fusion/archive');
@@ -102,7 +105,8 @@ const PlotFusionGame: React.FC = () => {
     );
     
     if (isDuplicateGuess) {
-      console.log('Duplicate guess detected:', guess);
+      setToastMessage('Already Guessed');
+      setShowToast(true);
       return;
     }
     
@@ -217,7 +221,7 @@ const PlotFusionGame: React.FC = () => {
       <div className="flex justify-end mb-4">
         <button
           onClick={handleArchiveClick}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-gray-600 text-white rounded-lg transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -253,13 +257,15 @@ const PlotFusionGame: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow-md">
         {/* Fused Plot Display */}
         <div className="mb-8">
-          <blockquote className="text-lg italic text-gray-700 border-l-4 border-blue-500 pl-6 py-4 bg-blue-50 rounded-r-lg">
-            "{gameData.fusedPlot}"
+          <blockquote className="text-2xl font-serif font-medium leading-relaxed text-gray-800 border-l-4 border-blue-500 pl-6 py-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-r-lg shadow-sm">
+            <span className="text-blue-600 text-3xl leading-none">"</span>
+            {gameData.fusedPlot}
+            <span className="text-blue-600 text-3xl leading-none">"</span>
           </blockquote>
         </div>
 
         {/* Movie Frames */}
-        <div className="flex justify-center items-center gap-8 mb-8">
+        <div className="flex justify-center items-center gap-96 mb-8">
           {/* Movie 1 Frame */}
           <PlotFusionMovieFrame
             movieKey="movie1"
@@ -269,9 +275,6 @@ const PlotFusionGame: React.FC = () => {
             showAnswers={gameState.showAnswers}
             onFrameClick={handleFrameClick}
           />
-          
-          {/* VS Divider */}
-          <div className="text-4xl font-bold text-gray-400">VS</div>
           
           {/* Movie 2 Frame */}
           <PlotFusionMovieFrame
@@ -291,6 +294,7 @@ const PlotFusionGame: React.FC = () => {
               movieKey="movie1"
               gameData={gameData}
               movieState={gameState.movie1State}
+              showAnswers={gameState.showAnswers}
             />
           </div>
           <div className="md:col-start-2">
@@ -298,12 +302,21 @@ const PlotFusionGame: React.FC = () => {
               movieKey="movie2"
               gameData={gameData}
               movieState={gameState.movie2State}
+              showAnswers={gameState.showAnswers}
             />
           </div>
         </div>
 
+        {/* Controls Section */}
+        <PlotFusionControls
+          gameCompleted={gameState.gameCompleted}
+          onSubmitGuess={handleSubmitGuess}
+          onShare={handleShare}
+          onReplay={handleReplay}
+        />
+
         {/* Guess History */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           <PlotFusionGuessHistory
             movieKey="movie1"
             gameData={gameData}
@@ -315,14 +328,6 @@ const PlotFusionGame: React.FC = () => {
             movieState={gameState.movie2State}
           />
         </div>
-
-        {/* Controls Section */}
-        <PlotFusionControls
-          gameCompleted={gameState.gameCompleted}
-          onSubmitGuess={handleSubmitGuess}
-          onShare={handleShare}
-          onReplay={handleReplay}
-        />
       </div>
 
       {/* Share Modal */}
@@ -331,6 +336,15 @@ const PlotFusionGame: React.FC = () => {
         onClose={() => setShowShareModal(false)}
         shareText={generatePlotFusionShareText(generateShareData())}
         gameTitle="Plot Fusion Result"
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type="info"
+        duration={2500}
       />
     </GameLayout>
   );

@@ -14,7 +14,6 @@ const PlotFusionGuessHistory: React.FC<PlotFusionGuessHistoryProps> = ({
   movieState
 }) => {
   const movie = gameData.movies[movieKey];
-  const movieLabel = movieKey === 'movie1' ? 'Movie 1' : 'Movie 2';
   const correctAnswer = movie.name;
 
   if (movieState.guesses.length === 0) {
@@ -22,7 +21,7 @@ const PlotFusionGuessHistory: React.FC<PlotFusionGuessHistoryProps> = ({
       <div className="bg-gray-50 p-4 rounded-lg">
         <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <span className="text-lg">📝</span>
-          {movieLabel} Guesses
+          Guesses
         </h4>
         <p className="text-gray-500 text-sm italic">No guesses yet</p>
       </div>
@@ -33,10 +32,10 @@ const PlotFusionGuessHistory: React.FC<PlotFusionGuessHistoryProps> = ({
     <div className="bg-gray-50 p-4 rounded-lg">
       <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
         <span className="text-lg">📝</span>
-        {movieLabel} Guesses ({movieState.guesses.length})
+        Guesses
       </h4>
       
-      <div className="space-y-2 max-h-32 overflow-y-auto">
+      <div className="space-y-2 max-h-32">
         {movieState.guesses.map((guess, index) => {
           const isCorrect = guess.toLowerCase() === correctAnswer.toLowerCase();
           

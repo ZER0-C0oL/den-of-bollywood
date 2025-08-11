@@ -319,6 +319,7 @@ const ConnectionsGame: React.FC = () => {
           formattedTime={cooldownState.formattedTime}
           onShare={handleShare}
           onReplay={handleReplay}
+          onArchive={handleArchiveClick}
           showShareModal={showShareModal}
           onCloseShareModal={() => setShowShareModal(false)}
         />
@@ -337,7 +338,7 @@ const ConnectionsGame: React.FC = () => {
           <div className="flex-1"></div>
           <button
             onClick={handleArchiveClick}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
             title="View past games"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

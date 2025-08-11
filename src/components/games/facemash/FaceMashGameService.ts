@@ -1,6 +1,6 @@
 import { FaceMashGameData, FaceMashHint } from '../../../types/gameTypes';
 import { GameStorageManager } from '../../../utils/gameStorage';
-import { getActorSuggestions } from '../../../data/actorsData';
+import { getActorSuggestions, getActorHints, getActorById } from '../../../data/actorsData';
 import { GameCalculationService } from '../../../services/gameCalculationService';
 import { GameStateService } from '../../../services/gameStateService';
 
@@ -79,20 +79,20 @@ export class FaceMashGameService {
     
     // Auto-target based on gender differences (only if both actors are not found yet)
     if (!actor1State.found && !actor2State.found) {
-      const actor1Gender = gameData.actor1.hints.find(h => h.type === 'gender')?.content.toLowerCase();
-      const actor2Gender = gameData.actor2.hints.find(h => h.type === 'gender')?.content.toLowerCase();
+      const actor1Data = getActorById(gameData.actor1.actorId);
+      const actor2Data = getActorById(gameData.actor2.actorId);
       
-      if (actor1Gender !== actor2Gender) {
+      if (actor1Data && actor2Data && actor1Data.gender !== actor2Data.gender) {
         // Different genders - find the guessed actor's gender from bollywoodActors data
         const guessLower = guess.toLowerCase().trim();
         const foundActor = getActorSuggestions(guess, 1)[0]; // Get the best match
         
         if (foundActor && foundActor.name.toLowerCase() === guessLower) {
           // Exact match found - use the actor's gender
-          if (foundActor.gender === 'male' && actor1Gender === 'male') return 'actor1';
-          if (foundActor.gender === 'male' && actor2Gender === 'male') return 'actor2';
-          if (foundActor.gender === 'female' && actor1Gender === 'female') return 'actor1';
-          if (foundActor.gender === 'female' && actor2Gender === 'female') return 'actor2';
+          if (foundActor.gender === 'male' && actor1Data.gender === 'male') return 'actor1';
+          if (foundActor.gender === 'male' && actor2Data.gender === 'male') return 'actor2';
+          if (foundActor.gender === 'female' && actor1Data.gender === 'female') return 'actor1';
+          if (foundActor.gender === 'female' && actor2Data.gender === 'female') return 'actor2';
         }
       }
       
@@ -113,9 +113,8 @@ export class FaceMashGameService {
     actor2State: ActorState
   ): { actor1State: ActorState; actor2State: ActorState } {
     const targetState = target === 'actor1' ? actor1State : actor2State;
-    const targetHints = target === 'actor1' 
-      ? this.getOrderedHints(gameData.actor1.hints) 
-      : this.getOrderedHints(gameData.actor2.hints);
+    const targetActorId = target === 'actor1' ? gameData.actor1.actorId : gameData.actor2.actorId;
+    const targetHints = this.getOrderedHints(getActorHints(targetActorId));
     
     if (targetState.hintsRevealed < targetHints.length) {
       const newTargetState = {
@@ -175,9 +174,8 @@ export class FaceMashGameService {
       // Correct guess - automatically assign to the correct actor regardless of selection
       const correctTarget = actor1Correct ? 'actor1' : 'actor2';
       target = correctTarget;
-      const targetHints = correctTarget === 'actor1' 
-        ? this.getOrderedHints(gameData.actor1.hints) 
-        : this.getOrderedHints(gameData.actor2.hints);
+      const targetActorId = correctTarget === 'actor1' ? gameData.actor1.actorId : gameData.actor2.actorId;
+      const targetHints = this.getOrderedHints(getActorHints(targetActorId));
       
       const newTargetState = {
         ...((correctTarget === 'actor1' ? currentState.actor1State : currentState.actor2State)),

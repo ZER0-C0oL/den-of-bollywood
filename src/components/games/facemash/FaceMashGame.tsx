@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
+import Toast from '../../Toast';
 import FaceMashActorFrame from './FaceMashActorFrame';
 import FaceMashImage from './FaceMashImage';
 import FaceMashHints from './FaceMashHints';
@@ -30,6 +31,8 @@ const FaceMashGame: React.FC = () => {
   });
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const handleArchiveClick = () => {
     navigate('/face-mash/archive');
@@ -103,8 +106,9 @@ const FaceMashGame: React.FC = () => {
     );
     
     if (isDuplicateGuess) {
-      // Could add toast notification or visual feedback here
-      console.log('Duplicate guess detected:', guess);
+      // Show toast notification for duplicate guess
+      setToastMessage('Already Guessed');
+      setShowToast(true);
       return;
     }
     
@@ -220,7 +224,7 @@ const FaceMashGame: React.FC = () => {
       <div className="flex justify-end mb-4">
         <button
           onClick={handleArchiveClick}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-gray-600 text-white rounded-lg transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -325,6 +329,15 @@ const FaceMashGame: React.FC = () => {
         onClose={() => setShowShareModal(false)}
         shareText={generateFaceMashShareText(generateShareData())}
         gameTitle="Face Mash Result"
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type="info"
+        duration={2500}
       />
     </GameLayout>
   );

@@ -1,5 +1,6 @@
 import { PlotFusionGameData } from '../../../types/gameTypes';
 import { GameStorageManager } from '../../../utils/gameStorage';
+import { getMovieHints } from '../../../data/moviesData';
 
 export interface PlotFusionMovieState {
   found: boolean;
@@ -86,10 +87,12 @@ export class PlotFusionGameService {
     // Check if guess matches movie1
     if (!newState.movie1State.found && 
         gameData.movies.movie1.name.toLowerCase() === guessLower) {
+      const movie1Hints = getMovieHints(gameData.movies.movie1.movieId);
       newState.movie1State = {
         ...newState.movie1State,
         found: true,
-        guesses: [...newState.movie1State.guesses, guess]
+        guesses: [...newState.movie1State.guesses, guess],
+        hintsRevealed: movie1Hints.length // Reveal all hints when found
       };
       isCorrect = true;
       target = 'movie1';
@@ -97,10 +100,12 @@ export class PlotFusionGameService {
     // Check if guess matches movie2
     else if (!newState.movie2State.found && 
              gameData.movies.movie2.name.toLowerCase() === guessLower) {
+      const movie2Hints = getMovieHints(gameData.movies.movie2.movieId);
       newState.movie2State = {
         ...newState.movie2State,
         found: true,
-        guesses: [...newState.movie2State.guesses, guess]
+        guesses: [...newState.movie2State.guesses, guess],
+        hintsRevealed: movie2Hints.length // Reveal all hints when found
       };
       isCorrect = true;
       target = 'movie2';
@@ -112,22 +117,24 @@ export class PlotFusionGameService {
         (newState.movie1State.guesses.length <= newState.movie2State.guesses.length ? 'movie1' : 'movie2');
       
       if (targetMovie === 'movie1' && !newState.movie1State.found) {
+        const movie1Hints = getMovieHints(gameData.movies.movie1.movieId);
         newState.movie1State = {
           ...newState.movie1State,
           guesses: [...newState.movie1State.guesses, guess],
           hintsRevealed: Math.min(
             newState.movie1State.hintsRevealed + 1,
-            gameData.movies.movie1.hints.length
+            movie1Hints.length
           )
         };
         target = 'movie1';
       } else if (targetMovie === 'movie2' && !newState.movie2State.found) {
+        const movie2Hints = getMovieHints(gameData.movies.movie2.movieId);
         newState.movie2State = {
           ...newState.movie2State,
           guesses: [...newState.movie2State.guesses, guess],
           hintsRevealed: Math.min(
             newState.movie2State.hintsRevealed + 1,
-            gameData.movies.movie2.hints.length
+            movie2Hints.length
           )
         };
         target = 'movie2';
@@ -137,8 +144,36 @@ export class PlotFusionGameService {
     // Update attempts and check completion
     newState.attempts += 1;
     newState.gameWon = newState.movie1State.found && newState.movie2State.found;
-    newState.gameCompleted = newState.gameWon || newState.attempts >= 10; // Max 10 attempts
+    
+    // Check if all hints are revealed for any unfound movie (game should end)
+    const movie1Hints = getMovieHints(gameData.movies.movie1.movieId);
+    const movie2Hints = getMovieHints(gameData.movies.movie2.movieId);
+    const movie1AllHintsRevealed = !newState.movie1State.found && 
+                                  newState.movie1State.hintsRevealed >= movie1Hints.length;
+    const movie2AllHintsRevealed = !newState.movie2State.found && 
+                                  newState.movie2State.hintsRevealed >= movie2Hints.length;
+    const allHintsRevealedForUnfoundMovie = movie1AllHintsRevealed || movie2AllHintsRevealed;
+    
+    newState.gameCompleted = newState.gameWon || newState.attempts >= 10 || allHintsRevealedForUnfoundMovie;
     newState.showAnswers = newState.gameCompleted;
+    
+    // When game ends, reveal all hints for both movies
+    if (newState.gameCompleted) {
+      if (!newState.movie1State.found) {
+        const movie1Hints = getMovieHints(gameData.movies.movie1.movieId);
+        newState.movie1State = {
+          ...newState.movie1State,
+          hintsRevealed: movie1Hints.length
+        };
+      }
+      if (!newState.movie2State.found) {
+        const movie2Hints = getMovieHints(gameData.movies.movie2.movieId);
+        newState.movie2State = {
+          ...newState.movie2State,
+          hintsRevealed: movie2Hints.length
+        };
+      }
+    }
 
     return { newState, isCorrect, target };
   }
