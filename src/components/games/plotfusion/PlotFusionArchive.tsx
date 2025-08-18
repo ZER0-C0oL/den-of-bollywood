@@ -9,10 +9,6 @@ const PlotFusionArchive: React.FC = () => {
   const games = getAllPlotFusionGames();
   const stats = getPlotFusionGameStats();
 
-  const handleGameSelect = (gameId: string) => {
-    navigate(`/plot-fusion?gameId=${gameId}`);
-  };
-
   const handleBackToToday = () => {
     navigate('/plot-fusion');
   };
@@ -72,7 +68,6 @@ const PlotFusionArchive: React.FC = () => {
         {/* Archive Grid */}
         <ArchiveGrid
           games={games}
-          onGameSelect={handleGameSelect}
           gameType="plot-fusion"
         />
       </div>

@@ -191,6 +191,12 @@ export class GameStorageManager {
           completed: 0,
           bestScore: 0,
           averageAttempts: 0
+        },
+        'glimpsed': {
+          played: 0,
+          completed: 0,
+          bestScore: 0,
+          averageAttempts: 0
         }
       }
     };

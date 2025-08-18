@@ -32,6 +32,14 @@ export interface PlotFusionShareData {
   movie2Attempts: number;
 }
 
+export interface GlimpsedShareData {
+  gameId: string;
+  gameWon: boolean;
+  totalAttempts: number;
+  framesShown: number;
+  guesses: string[];
+}
+
 /**
  * Generate share text for Face Mash game
  */
@@ -190,6 +198,48 @@ const safeEncodeURIComponent = (str: string): string => {
       return ''; // Return empty string as last resort
     }
   }
+};
+
+/**
+ * Generate share text for Glimpsed game
+ */
+export const generateGlimpsedShareText = (data: GlimpsedShareData): string => {
+  const gameNumber = SHARE_CONFIG.getGameNumber(data.gameId);
+  const { SUCCESS, WRONG_ATTEMPT } = SHARE_CONFIG.COLORS.FACE_MASH;
+  
+  // Generate frame progress - one emoji per frame shown
+  const frameProgress = Array.from({ length: data.framesShown }, (_, i) => {
+    if (i < data.framesShown - 1) {
+      return '🎬'; // Frame shown
+    } else if (data.gameWon) {
+      return SUCCESS; // Last frame with correct guess
+    } else {
+      return WRONG_ATTEMPT; // Last frame but wrong guess
+    }
+  }).join('');
+  
+  // If game was completed with wrong guesses, show remaining frames as not shown
+  const maxFrames = 6;
+  const remainingFrames = maxFrames - data.framesShown;
+  if (!data.gameWon && remainingFrames > 0) {
+    // Add dots for remaining frames
+    for (let i = 0; i < remainingFrames; i++) {
+      // Don't add anything - just show what was revealed
+    }
+  }
+
+  const resultText = data.gameWon ? 
+    `✅ Solved in ${data.totalAttempts} guess${data.totalAttempts !== 1 ? 'es' : ''}!` : 
+    `❌ Not solved after ${data.totalAttempts} guesses`;
+
+  return `🎬 Glimpsed #${gameNumber}
+
+${frameProgress}
+
+${resultText}
+🎯 Frames shown: ${data.framesShown}/6
+
+${SHARE_CONFIG.WEBSITE_URL}`;
 };
 
 /**

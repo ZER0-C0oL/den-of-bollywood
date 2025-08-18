@@ -6,17 +6,20 @@ import { GAME_CONFIG } from '../constants/gameConfig';
 import { getTodaysConnectionsGame } from '../data/connectionsData';
 import { getTodaysFaceMashGame } from '../data/faceMashData';
 import { getTodaysPlotFusionGame } from '../data/plotFusionData';
+import { getTodaysGlimpsedGame } from '../data/glimpsedData';
 
 const HomePage: React.FC = () => {
   const userStats = GameStorageManager.getUserStats();
   const connectionsOnCooldown = GameStorageManager.isGameOnCooldown('connections');
   const faceMashOnCooldown = GameStorageManager.isGameOnCooldown('face-mash');
   const plotFusionOnCooldown = GameStorageManager.isGameOnCooldown('plot-fusion');
+  const glimpsedOnCooldown = GameStorageManager.isGameOnCooldown('glimpsed');
 
   // Check if today's games are completed
   const todaysConnectionsGame = getTodaysConnectionsGame();
   const todaysFaceMashGame = getTodaysFaceMashGame();
   const todaysPlotFusionGame = getTodaysPlotFusionGame();
+  const todaysGlimpsedGame = getTodaysGlimpsedGame();
   
   const connectionsProgress = todaysConnectionsGame ? 
     GameStorageManager.getGameProgress(todaysConnectionsGame.id) : null;
@@ -24,9 +27,11 @@ const HomePage: React.FC = () => {
     GameStorageManager.getGameProgress(todaysFaceMashGame.id) : null;
   const plotFusionProgress = todaysPlotFusionGame ? 
     GameStorageManager.getGameProgress(todaysPlotFusionGame.id) : null;
+  const glimpsedProgress = todaysGlimpsedGame ? 
+    GameStorageManager.getGameProgress(todaysGlimpsedGame.id) : null;
 
   // Function to determine game status
-  const getGameStatus = (progress: any, gameType: 'connections' | 'face-mash' | 'plot-fusion') => {
+  const getGameStatus = (progress: any, gameType: 'connections' | 'face-mash' | 'plot-fusion' | 'glimpsed') => {
     if (!progress) return 'not_started';
     
     if (progress.completed) {
@@ -36,6 +41,8 @@ const HomePage: React.FC = () => {
         return (progress.gameState?.actor1State?.found && progress.gameState?.actor2State?.found) ? 'solved' : 'unsolved';
       } else if (gameType === 'plot-fusion') {
         return (progress.gameState?.movie1State?.found && progress.gameState?.movie2State?.found) ? 'solved' : 'unsolved';
+      } else if (gameType === 'glimpsed') {
+        return progress.gameState?.movieFound ? 'solved' : 'unsolved';
       }
     }
     
@@ -46,6 +53,7 @@ const HomePage: React.FC = () => {
   const connectionsStatus = getGameStatus(connectionsProgress, 'connections');
   const faceMashStatus = getGameStatus(faceMashProgress, 'face-mash');
   const plotFusionStatus = getGameStatus(plotFusionProgress, 'plot-fusion');
+  const glimpsedStatus = getGameStatus(glimpsedProgress, 'glimpsed');
 
   const gameCards = [
     {
@@ -74,6 +82,15 @@ const HomePage: React.FC = () => {
       onCooldown: plotFusionOnCooldown,
       status: plotFusionStatus,
       stats: userStats.gameStats['plot-fusion']
+    },
+    {
+      title: 'Glimpsed',
+      description: 'Guess the Bollywood movie from frames shown one by one. More frames unlock with wrong guesses!',
+      route: '/glimpsed',
+      gameType: 'glimpsed' as const,
+      onCooldown: glimpsedOnCooldown,
+      status: glimpsedStatus,
+      stats: userStats.gameStats.glimpsed
     }
   ];
 

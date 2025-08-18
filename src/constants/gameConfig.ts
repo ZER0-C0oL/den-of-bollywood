@@ -13,7 +13,8 @@ export const GAME_CONFIG = {
   GAMES: {
     CONNECTIONS: 'connections',
     FACE_MASH: 'face-mash',
-    PLOT_FUSION: 'plot-fusion'
+    PLOT_FUSION: 'plot-fusion',
+    GLIMPSED: 'glimpsed'
   }
 } as const;
 

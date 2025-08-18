@@ -8,10 +8,6 @@ const ConnectionsArchive: React.FC = () => {
   const navigate = useNavigate();
   const allGames = getAllConnectionsGames();
 
-  const handleGameSelect = (gameId: string) => {
-    navigate(`/connections?gameId=${gameId}`);
-  };
-
   const handleBackToGame = () => {
     navigate('/connections');
   };
@@ -36,7 +32,6 @@ const ConnectionsArchive: React.FC = () => {
         {/* Archive Grid */}
         <ArchiveGrid
           games={allGames}
-          onGameSelect={handleGameSelect}
           gameType="connections"
         />
 

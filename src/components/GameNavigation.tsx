@@ -11,7 +11,8 @@ interface GameNavItem {
 const gameNavItems: GameNavItem[] = [
   { name: 'Connections', route: '/connections', gameType: GAME_CONFIG.GAMES.CONNECTIONS },
   { name: 'Face Mash', route: '/face-mash', gameType: GAME_CONFIG.GAMES.FACE_MASH },
-  { name: 'Plot Fusion', route: '/plot-fusion', gameType: GAME_CONFIG.GAMES.PLOT_FUSION }
+  { name: 'Plot Fusion', route: '/plot-fusion', gameType: GAME_CONFIG.GAMES.PLOT_FUSION },
+  { name: 'Glimpsed', route: '/glimpsed', gameType: GAME_CONFIG.GAMES.GLIMPSED }
 ];
 
 const GameNavigation: React.FC = () => {

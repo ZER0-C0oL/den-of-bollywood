@@ -4,9 +4,11 @@ import HomePage from './components/HomePage';
 import { ConnectionsGame } from './components/games/connections';
 import { FaceMashGame } from './components/games/facemash';
 import { PlotFusionGame } from './components/games/plotfusion';
+import { GlimpsedGame } from './components/games/glimpsed';
 import ConnectionsArchive from './components/games/connections/ConnectionsArchive';
 import FaceMashArchive from './components/games/facemash/FaceMashArchive';
 import PlotFusionArchive from './components/games/plotfusion/PlotFusionArchive';
+import GlimpsedArchive from './components/games/glimpsed/GlimpsedArchive';
 import './App.css';
 
 function App() {
@@ -21,6 +23,9 @@ function App() {
           <Route path="/face-mash/archive" element={<FaceMashArchive />} />
           <Route path="/plot-fusion" element={<PlotFusionGame />} />
           <Route path="/plot-fusion/archive" element={<PlotFusionArchive />} />
+          <Route path="/glimpsed" element={<GlimpsedGame />} />
+          <Route path="/glimpsed/:gameId" element={<GlimpsedGame />} />
+          <Route path="/glimpsed/archive" element={<GlimpsedArchive />} />
         </Routes>
       </div>
     </Router>

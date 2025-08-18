@@ -1,13 +1,13 @@
 import React from 'react';
-import { ConnectionsGameData, FaceMashGameData, PlotFusionGameData } from '../../types/gameTypes';
+import { ConnectionsGameData, FaceMashGameData, PlotFusionGameData, GlimpsedGameData } from '../../types/gameTypes';
 
 interface ArchiveGridProps {
-  games: (ConnectionsGameData | FaceMashGameData | PlotFusionGameData)[];
-  onGameSelect: (gameId: string) => void;
-  gameType: 'connections' | 'face-mash' | 'plot-fusion';
+  games: (ConnectionsGameData | FaceMashGameData | PlotFusionGameData | GlimpsedGameData)[];
+  gameType: 'connections' | 'face-mash' | 'plot-fusion' | 'glimpsed';
+  emptyMessage?: string;
 }
 
-const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, onGameSelect, gameType }) => {
+const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, gameType, emptyMessage }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -32,13 +32,28 @@ const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, onGameSelect, gameType
     return match ? match[1] : '1';
   };
 
+  const handleGameClick = (game: any) => {
+    const gameNumber = getGameNumber(game.id);
+    window.location.href = `/${gameType}/${gameNumber}`;
+  };
+
+  if (games.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-500 text-lg">
+          {emptyMessage || 'No games available yet. Check back soon!'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {games.map((game) => (
           <button
             key={game.id}
-            onClick={() => onGameSelect(game.id)}
+            onClick={() => handleGameClick(game)}
             className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-bollywood-teal hover:shadow-lg transition-all duration-200 flex flex-col items-center justify-center min-h-[100px]"
           >
             <div className="text-2xl font-bold text-gray-800 mb-2">

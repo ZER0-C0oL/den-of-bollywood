@@ -62,6 +62,15 @@ export interface PlotFusionGameData extends BaseGame {
   date: string;
 }
 
+// Glimpsed Game Types
+export interface GlimpsedGameData extends BaseGame {
+  type: 'glimpsed';
+  movieId: string;
+  movieName: string;
+  totalFrames: number;
+  date: string;
+}
+
 // Game Progress Tracking
 export interface GameProgress {
   gameId: string;
@@ -98,6 +107,10 @@ export interface GameProgress {
       guesses: string[];
       hintsRevealed: number;
     };
+    // For Glimpsed: game state
+    currentFrame?: number;
+    guesses?: string[];
+    movieFound?: boolean;
   };
   // For Connections: attempt results
   attemptResults?: ('correct' | 'one_away' | 'wrong')[];

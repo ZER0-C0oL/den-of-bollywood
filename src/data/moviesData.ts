@@ -159,6 +159,20 @@ export const bollywoodMoviesData: MovieEntry[] = [
       { type: 'director', text: 'Directed by Suresh Triveni' },
       { type: 'cast', text: 'Starring Vidya Balan and Manav Kaul' }
     ]
+  },
+  {
+    id: '11',
+    name: 'Chalte Chalte',
+    aliases: [],
+    year: 2003,
+    director: 'Aziz Mirza',
+    cast: ['Shah Rukh Khan', 'Rani Mukerji'],
+    genre: ['Drama', 'Romance'],
+    hints: [
+      { type: 'year', text: 'Released in 2003' },
+      { type: 'director', text: 'Directed by Aziz Mirza' },
+      { type: 'cast', text: 'Starring Shah Rukh Khan and Rani Mukerji' }
+    ]
   }
 ];
 

@@ -8,10 +8,6 @@ const FaceMashArchive: React.FC = () => {
   const navigate = useNavigate();
   const allGames = getAllFaceMashGames();
 
-  const handleGameSelect = (gameId: string) => {
-    navigate(`/face-mash?gameId=${gameId}`);
-  };
-
   const handleBackToGame = () => {
     navigate('/face-mash');
   };
@@ -36,7 +32,6 @@ const FaceMashArchive: React.FC = () => {
         {/* Archive Grid */}
         <ArchiveGrid
           games={allGames}
-          onGameSelect={handleGameSelect}
           gameType="face-mash"
         />
 
