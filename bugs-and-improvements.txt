@@ -1,5 +1,5 @@
 Improvements:
-1. Archive facility
-2. Improve mashed faces
+1. Add fireworks for all games.
+2. Remove Cooldown view for all games.
 3. Add Dark Mode and Light Mode
 4. Have a global constants file to turn on and off the game tiles
