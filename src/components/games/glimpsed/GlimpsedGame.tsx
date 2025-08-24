@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import { GlimpsedGameService, GlimpsedGameState } from './GlimpsedGameService';
@@ -10,8 +10,10 @@ import { generateGlimpsedShareText, GlimpsedShareData } from '../../../utils/sha
 import GlimpsedControls from './GlimpsedControls';
 import GlimpsedGuessHistory from './GlimpsedGuessHistory';
 import GlimpsedFrameViewer from './GlimpsedFrameViewer';
+import type { GlimpsedFrameViewerHandle } from './GlimpsedFrameViewer';
 import ShareModal from '../../ShareModal';
 import Toast from '../../Toast';
+import Fireworks from '../../Fireworks';
 
 const GlimpsedGame: React.FC = () => {
   const { gameId: paramGameId } = useParams<{ gameId: string }>();
@@ -28,6 +30,8 @@ const GlimpsedGame: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [cooldownTime, setCooldownTime] = useState(0);
+  const viewerRef = useRef<GlimpsedFrameViewerHandle | null>(null);
+  const [showFireworks, setShowFireworks] = useState(false);
 
   // Handle archive click
   const handleArchiveClick = () => {
@@ -89,6 +93,15 @@ const GlimpsedGame: React.FC = () => {
     // Save progress
     const score = result.gameWon ? GlimpsedGameService.calculateScore(result.newState) : undefined;
     GlimpsedGameService.saveGameProgress(gameData.id, result.newState, result.gameWon, score);
+
+    // If guess was correct, trigger the frame autoplay in the viewer immediately
+    if (result.isCorrect) {
+  // show fireworks briefly at center
+  setShowFireworks(true);
+  viewerRef.current?.playRemaining?.();
+  // hide after duration (component also calls onComplete) as a fallback
+  setTimeout(() => setShowFireworks(false), 3800);
+    }
     
     // Update last played and stats if game completed and it's today's game
     if (result.newState.gameCompleted && !isArchiveGame) {
@@ -158,7 +171,7 @@ const GlimpsedGame: React.FC = () => {
 
   return (
     <GameLayout title="Glimpsed" description="Guess the Bollywood movie from frames">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative">
         {/* Header with Archive Button */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex-1"></div>
@@ -174,15 +187,29 @@ const GlimpsedGame: React.FC = () => {
           </button>
         </div>
 
-        {/* Cooldown banner (inline) */}
-        {cooldownTime > 0 && !isArchiveGame && (
-          <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
-            <h2 className="text-xl font-bold">Next Challenge in: {CooldownService.getCooldownState('glimpsed').formattedTime}</h2>
+        {/* Cooldown square overlay (left side) */}
+          {cooldownTime > 0 && !isArchiveGame && (
+            <div className="absolute left-4 top-2">
+              <div className="w-32 h-10 bg-bollywood-teal text-white rounded-lg shadow-lg flex flex-col items-center justify-center p-2">
+                <span className="text-sm font-semibold">Next: {CooldownService.getCooldownState('glimpsed').formattedTime}</span>
+              </div>
+            </div>
+          )}
+
+        {/* Game Completed Section */}
+        {gameState.gameCompleted && (
+          <div className="text-center mb-6">
+            <div className={`p-2 rounded-lg ${gameState.movieFound ? 'bg-green-50' : 'bg-red-50'}`}>
+              <h3 className={`text-2xl font-bold ${gameState.movieFound ? 'text-green-800' : 'text-red-800'}`}>
+                {gameState.movieFound ? '🎉 Congratulations!' : '😔 Game Over'}
+              </h3>
+            </div>
           </div>
         )}
 
         {/* Frame Viewer */}
         <GlimpsedFrameViewer
+          ref={viewerRef}
           gameData={gameData}
           gameState={gameState}
         />
@@ -222,6 +249,8 @@ const GlimpsedGame: React.FC = () => {
           shareText={generateGlimpsedShareText(generateShareData())}
           gameTitle="Glimpsed Result"
         />
+  {/* Fireworks on correct guess */}
+  <Fireworks isActive={showFireworks} onComplete={() => setShowFireworks(false)} />
       </div>
     </GameLayout>
   );
