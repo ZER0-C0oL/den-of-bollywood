@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import { ConnectionsGameData } from '../../../types/gameTypes';
@@ -18,7 +18,7 @@ import ConnectionsControls, { ConnectionsControlsRef } from './ConnectionsContro
 import ConnectionsCooldownView from './ConnectionsCooldownView';
 
 const ConnectionsGame: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const { gameId } = useParams<{ gameId?: string }>();
   const navigate = useNavigate();
   const [gameData, setGameData] = useState<ConnectionsGameData | null>(null);
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -49,12 +49,12 @@ const ConnectionsGame: React.FC = () => {
   };
 
   useEffect(() => {
-    const gameId = searchParams.get('gameId');
     let game: ConnectionsGameData | null = null;
     
     if (gameId) {
-      // Archive game
-      game = getConnectionsGameById(gameId);
+      // Archive game - construct the full game ID
+      const fullGameId = `connections-${gameId.padStart(3, '0')}`;
+      game = getConnectionsGameById(fullGameId);
       setIsArchiveGame(true);
     } else {
       // Today's game
@@ -137,7 +137,7 @@ const ConnectionsGame: React.FC = () => {
         }
       }
     }
-  }, [searchParams]);
+  }, [gameId]);
 
   const handleItemClick = (item: string, groupId: string) => {
     if (gameCompleted || cooldownState.isOnCooldown) return;

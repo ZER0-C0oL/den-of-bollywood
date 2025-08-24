@@ -18,10 +18,13 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/connections" element={<ConnectionsGame />} />
+          <Route path="/connections/:gameId" element={<ConnectionsGame />} />
           <Route path="/connections/archive" element={<ConnectionsArchive />} />
           <Route path="/face-mash" element={<FaceMashGame />} />
+          <Route path="/face-mash/:gameId" element={<FaceMashGame />} />
           <Route path="/face-mash/archive" element={<FaceMashArchive />} />
           <Route path="/plot-fusion" element={<PlotFusionGame />} />
+          <Route path="/plot-fusion/:gameId" element={<PlotFusionGame />} />
           <Route path="/plot-fusion/archive" element={<PlotFusionArchive />} />
           <Route path="/glimpsed" element={<GlimpsedGame />} />
           <Route path="/glimpsed/:gameId" element={<GlimpsedGame />} />

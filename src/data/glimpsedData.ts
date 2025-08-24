@@ -7,7 +7,7 @@ export const glimpsedGamesData: GlimpsedGameData[] = [
     description: 'Guess the Bollywood movie from frames',
     type: 'glimpsed',
     route: '/glimpsed/001',
-    movieId: '11', // Chalte Chalte from moviesData
+    movieId: '11',
     movieName: 'Chalte Chalte',
     totalFrames: 6,
     date: '2025-08-18'

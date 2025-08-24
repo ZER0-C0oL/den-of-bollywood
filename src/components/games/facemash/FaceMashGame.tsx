@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import Toast from '../../Toast';
@@ -17,7 +17,7 @@ import { CooldownService } from '../../../services/cooldownService';
 import { GameStorageManager } from '../../../utils/gameStorage';
 
 const FaceMashGame: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const { gameId } = useParams<{ gameId?: string }>();
   const navigate = useNavigate();
   const [gameData, setGameData] = useState<FaceMashGameData | null>(null);
   const [gameState, setGameState] = useState<FaceMashGameState>({
@@ -39,12 +39,12 @@ const FaceMashGame: React.FC = () => {
   };
 
   useEffect(() => {
-    const gameId = searchParams.get('gameId');
     let game: FaceMashGameData | null = null;
     
     if (gameId) {
-      // Archive game
-      game = getFaceMashGameById(gameId);
+      // Archive game - construct the full game ID
+      const fullGameId = `face-mash-${gameId.padStart(3, '0')}`;
+      game = getFaceMashGameById(fullGameId);
     } else {
       // Today's game
       game = getTodaysFaceMashGame();
@@ -77,7 +77,7 @@ const FaceMashGame: React.FC = () => {
         ...progress
       }));
     }
-  }, [searchParams]);
+  }, [gameId]);
 
   const startCooldownTimer = () => {
     const cleanup = CooldownService.startCooldownTimer('face-mash', (cooldownState) => {

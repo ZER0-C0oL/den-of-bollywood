@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import GameLayout from '../../GameLayout';
 import ShareModal from '../../ShareModal';
 import Toast from '../../Toast';
@@ -16,7 +16,7 @@ import PlotFusionHints from './PlotFusionHints';
 import PlotFusionGuessHistory from './PlotFusionGuessHistory';
 
 const PlotFusionGame: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const { gameId } = useParams<{ gameId?: string }>();
   const navigate = useNavigate();
   const [gameData, setGameData] = useState<PlotFusionGameData | null>(null);
   const [gameState, setGameState] = useState<PlotFusionGameState>({
@@ -38,12 +38,12 @@ const PlotFusionGame: React.FC = () => {
   };
 
   useEffect(() => {
-    const gameId = searchParams.get('gameId');
     let game: PlotFusionGameData | null = null;
     
     if (gameId) {
-      // Archive game
-      game = getPlotFusionGameById(gameId);
+      // Archive game - construct the full game ID
+      const fullGameId = `plot-fusion-${gameId.padStart(3, '0')}`;
+      game = getPlotFusionGameById(fullGameId);
     } else {
       // Today's game
       game = getTodaysPlotFusionGame();
@@ -76,7 +76,7 @@ const PlotFusionGame: React.FC = () => {
         ...progress
       }));
     }
-  }, [searchParams]);
+  }, [gameId]);
 
   const startCooldownTimer = () => {
     const cleanup = CooldownService.startCooldownTimer('plot-fusion', (cooldownState) => {

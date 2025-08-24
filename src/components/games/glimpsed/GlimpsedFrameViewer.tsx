@@ -62,15 +62,6 @@ const GlimpsedFrameViewer: React.FC<GlimpsedFrameViewerProps> = ({
 
   return (
     <div className="mb-8">
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
-          Frame {gameState.currentFrame} of {gameData.totalFrames}
-        </h2>
-        <p className="text-gray-600">
-          What movie is this from?
-        </p>
-      </div>
-
       {/* Current Frame */}
       <div className="flex justify-center mb-6">
         <div className="bg-white p-4 rounded-lg shadow-lg">

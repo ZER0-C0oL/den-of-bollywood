@@ -53,22 +53,6 @@ const GlimpsedGuessHistory: React.FC<GlimpsedGuessHistoryProps> = ({
               );
             })}
           </div>
-          
-          <div className="mt-4 pt-3 border-t border-gray-200">
-            <div className="text-sm text-gray-600 text-center">
-              {gameCompleted ? (
-                guesses.some(guess => 
-                  guess.toLowerCase().trim() === correctMovie.toLowerCase().trim()
-                ) ? (
-                  `🎉 Found the movie in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}!`
-                ) : (
-                  `😔 Movie not found after ${guesses.length} guesses`
-                )
-              ) : (
-                `${guesses.length} incorrect guess${guesses.length !== 1 ? 'es' : ''} so far...`
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

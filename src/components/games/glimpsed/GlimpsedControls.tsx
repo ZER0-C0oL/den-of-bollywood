@@ -159,14 +159,6 @@ const GlimpsedControls: React.FC<GlimpsedControlsProps> = ({
           )}
         </div>
       </form>
-
-      {!gameCompleted && (
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">
-            💡 Start typing to see movie suggestions
-          </p>
-        </div>
-      )}
     </div>
   );
 };

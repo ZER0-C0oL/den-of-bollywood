@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ConnectionsGameData, FaceMashGameData, PlotFusionGameData, GlimpsedGameData } from '../../types/gameTypes';
 
 interface ArchiveGridProps {
@@ -8,6 +9,8 @@ interface ArchiveGridProps {
 }
 
 const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, gameType, emptyMessage }) => {
+  const navigate = useNavigate();
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -34,7 +37,7 @@ const ArchiveGrid: React.FC<ArchiveGridProps> = ({ games, gameType, emptyMessage
 
   const handleGameClick = (game: any) => {
     const gameNumber = getGameNumber(game.id);
-    window.location.href = `/${gameType}/${gameNumber}`;
+    navigate(`/${gameType}/${gameNumber}`);
   };
 
   if (games.length === 0) {

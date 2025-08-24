@@ -194,16 +194,6 @@ const GlimpsedGame: React.FC = () => {
           </button>
         </div>
 
-        {/* Game Title */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {gameData.title}
-          </h1>
-          <p className="text-gray-600">
-            Guess the Bollywood movie from the frames shown
-          </p>
-        </div>
-
         {/* Frame Viewer */}
         <GlimpsedFrameViewer
           gameData={gameData}
