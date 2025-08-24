@@ -12,13 +12,26 @@ const GlimpsedFrameViewer: React.FC<GlimpsedFrameViewerProps> = ({ gameData, gam
   const movieData = getMovieById(gameData.movieId);
   const [selectedFrame, setSelectedFrame] = useState(gameState.currentFrame);
 
-  useEffect(() => {
-    setSelectedFrame(gameState.currentFrame);
-  }, [gameState.currentFrame]);
-
   const minFrame = 1;
-  const maxFrame = gameState.currentFrame;
-  const framePath = GlimpsedGameService.getFrameImagePath(gameData, selectedFrame);
+  // If game is completed (correct guess or max attempts reached), allow navigation through all frames and the poster (frame 7)
+  const isCompleted = gameState.gameCompleted || gameState.showAnswer;
+  const maxFrame = isCompleted ? 7 : gameState.currentFrame;
+
+  // When game completes, default to showing the poster (frame 7). Otherwise follow currentFrame.
+  useEffect(() => {
+    setSelectedFrame(isCompleted ? 7 : gameState.currentFrame);
+  }, [gameState.currentFrame, isCompleted]);
+
+  // Ensure selectedFrame stays within allowed range
+  useEffect(() => {
+    setSelectedFrame(prev => Math.min(Math.max(prev, minFrame), maxFrame));
+  }, [maxFrame]);
+
+  const framePath = selectedFrame === 7
+    ? GlimpsedGameService.getMovieImagePath(gameData)
+    : GlimpsedGameService.getFrameImagePath(gameData, selectedFrame);
+  // Use movieData for accessible labels when showing poster
+  const movieTitle = movieData?.name || gameData.movieName;
 
   const handlePrev = () => {
     if (selectedFrame > minFrame) setSelectedFrame(selectedFrame - 1);
@@ -26,45 +39,6 @@ const GlimpsedFrameViewer: React.FC<GlimpsedFrameViewerProps> = ({ gameData, gam
   const handleNext = () => {
     if (selectedFrame < maxFrame) setSelectedFrame(selectedFrame + 1);
   };
-
-  // Show movie poster if game is completed
-  if (gameState.showAnswer) {
-    const movieImagePath = GlimpsedGameService.getMovieImagePath(gameData);
-    return (
-      <div className="mb-8">
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            {gameState.movieFound ? '🎉 Congratulations!' : '🎬 Movie Revealed'}
-          </h2>
-          <p className="text-lg text-gray-600">
-            The movie was: <span className="font-semibold text-bollywood-red">{movieData?.name || gameData.movieName}</span>
-          </p>
-        </div>
-        <div className="flex justify-center">
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <img
-              src={movieImagePath}
-              alt={`${movieData?.name || gameData.movieName} poster`}
-              className="max-w-md max-h-96 object-contain rounded-lg"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.innerHTML = '<div class="w-64 h-96 bg-gray-200 rounded-lg flex items-center justify-center">' +
-                    '<div class="text-center">' +
-                      '<div class="text-4xl mb-2">🎬</div>' +
-                      '<div class="text-lg font-semibold">' + (movieData?.name || gameData.movieName) + '</div>' +
-                    '</div>' +
-                  '</div>';
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="mb-8">
@@ -85,19 +59,28 @@ const GlimpsedFrameViewer: React.FC<GlimpsedFrameViewerProps> = ({ gameData, gam
         <div className="bg-white p-4 rounded-lg shadow-lg">
           <img
             src={framePath}
-            alt={`Movie frame ${selectedFrame}`}
+            alt={selectedFrame === 7 ? `${movieTitle} poster` : `Movie frame ${selectedFrame}`}
             className="max-w-2xl max-h-96 object-contain rounded-lg"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
               const parent = target.parentElement;
               if (parent) {
-                parent.innerHTML = '<div class="w-96 h-64 bg-gray-200 rounded-lg flex items-center justify-center">' +
-                  '<div class="text-center">' +
-                    '<div class="text-4xl mb-2">🎬</div>' +
-                    '<div class="text-lg">Frame ' + selectedFrame + '</div>' +
-                  '</div>' +
-                '</div>';
+                if (selectedFrame === 7) {
+                  parent.innerHTML = '<div class="w-96 h-96 bg-gray-200 rounded-lg flex items-center justify-center">' +
+                    '<div class="text-center">' +
+                      '<div class="text-4xl mb-2">🎬</div>' +
+                      '<div class="text-lg font-semibold">' + movieTitle + '</div>' +
+                    '</div>' +
+                  '</div>';
+                } else {
+                  parent.innerHTML = '<div class="w-96 h-64 bg-gray-200 rounded-lg flex items-center justify-center">' +
+                    '<div class="text-center">' +
+                      '<div class="text-4xl mb-2">🎬</div>' +
+                      '<div class="text-lg">Frame ' + selectedFrame + '</div>' +
+                    '</div>' +
+                  '</div>';
+                }
               }
             }}
           />
@@ -115,7 +98,9 @@ const GlimpsedFrameViewer: React.FC<GlimpsedFrameViewerProps> = ({ gameData, gam
           </svg>
         </button>
       </div>
-      <div className="text-center text-gray-600 text-sm">Frame {selectedFrame} of 6</div>
+      {!isCompleted && (
+        <div className="text-center text-gray-600 text-sm">Frame {selectedFrame} of 6</div>
+      )}
     </div>
   );
 };

@@ -19,7 +19,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({ children, title, description })
     <div className="min-h-screen bg-gradient-to-br from-bollywood-darkBlue to-bollywood-lightBlue ">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <header className="flex justify-between items-center mb-8">
+        <header className="flex justify-between items-center mb-4">
           <div>
             <Link to="/" className="flex items-center gap-3 hover:text-blue-200 transition-colors duration-200">
               <img 

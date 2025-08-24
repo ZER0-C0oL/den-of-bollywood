@@ -10,7 +10,6 @@ import { generateGlimpsedShareText, GlimpsedShareData } from '../../../utils/sha
 import GlimpsedControls from './GlimpsedControls';
 import GlimpsedGuessHistory from './GlimpsedGuessHistory';
 import GlimpsedFrameViewer from './GlimpsedFrameViewer';
-import GlimpsedCooldownView from './GlimpsedCooldownView';
 import ShareModal from '../../ShareModal';
 import Toast from '../../Toast';
 
@@ -27,7 +26,7 @@ const GlimpsedGame: React.FC = () => {
   
   // UI state
   const [showShareModal, setShowShareModal] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [cooldownTime, setCooldownTime] = useState(0);
 
   // Handle archive click
@@ -71,7 +70,15 @@ const GlimpsedGame: React.FC = () => {
   const handleGuess = (guess: string) => {
     if (!gameData || gameState.gameCompleted) return;
 
-    const movieData = getMovieById(gameData.movieId);
+    // Prevent duplicate guesses (case-insensitive)
+    const normalizedGuess = guess.toLowerCase().trim();
+    const previousLower = gameState.guesses.map(g => g.toLowerCase().trim());
+    if (previousLower.includes(normalizedGuess)) {
+      setToast({ message: 'Already Guessed', type: 'info' });
+      return;
+    }
+
+  const movieData = getMovieById(gameData.movieId);
     if (!movieData) return;
 
     const result = GlimpsedGameService.processGuess(guess, movieData.name, gameState);
@@ -98,15 +105,6 @@ const GlimpsedGame: React.FC = () => {
         });
       }
     }
-
-    // Show feedback toast
-    if (result.isCorrect) {
-      setToast({ message: `🎉 Correct! You found the movie!`, type: 'success' });
-    } else if (result.newState.gameCompleted) {
-      setToast({ message: `😔 Game over! The movie was "${movieData.name}"`, type: 'error' });
-    } else {
-      setToast({ message: `Not quite! Here's the next frame...`, type: 'error' });
-    }
   };
 
   const handleShare = () => {
@@ -115,10 +113,14 @@ const GlimpsedGame: React.FC = () => {
 
   const handleReplay = () => {
     if (!gameData) return;
-    
     GlimpsedGameService.clearGameProgress(gameData.id);
     setGameState(GlimpsedGameService.initializeGameState());
-    setToast({ message: 'Game reset! Good luck!', type: 'success' });
+    // Clear persisted cooldown and any running timer
+    GameStorageManager.clearGameCooldown('glimpsed' as any);
+    // Stop cooldown timer
+    (CooldownService as any).clearTimer('glimpsed');
+    setCooldownTime(0);
+    setToast({ message: 'Game reset! Cooldown cleared.', type: 'success' });
   };
 
   const generateShareData = (): GlimpsedShareData => {
@@ -150,29 +152,7 @@ const GlimpsedGame: React.FC = () => {
     );
   }
 
-  // Show cooldown view for today's game if on cooldown
-  if (cooldownTime > 0 && !isArchiveGame) {
-    return (
-      <>
-        <GlimpsedCooldownView
-          formattedTime={CooldownService.getCooldownState('glimpsed').formattedTime}
-          onShare={handleShare}
-          onReplay={handleReplay}
-          onArchive={handleArchiveClick}
-          showShareModal={showShareModal}
-          onCloseShareModal={() => setShowShareModal(false)}
-        />
-        
-        {/* Share Modal for cooldown view */}
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          shareText={generateGlimpsedShareText(generateShareData())}
-          gameTitle="Glimpsed Result"
-        />
-      </>
-    );
-  }
+  // We'll render cooldown UI inline inside the normal GameLayout return instead of an early return
 
   const movieData = getMovieById(gameData.movieId);
 
@@ -194,6 +174,13 @@ const GlimpsedGame: React.FC = () => {
           </button>
         </div>
 
+        {/* Cooldown banner (inline) */}
+        {cooldownTime > 0 && !isArchiveGame && (
+          <div className="bg-bollywood-teal text-white p-4 rounded-lg mb-6 text-center">
+            <h2 className="text-xl font-bold">Next Challenge in: {CooldownService.getCooldownState('glimpsed').formattedTime}</h2>
+          </div>
+        )}
+
         {/* Frame Viewer */}
         <GlimpsedFrameViewer
           gameData={gameData}
@@ -203,7 +190,8 @@ const GlimpsedGame: React.FC = () => {
         {/* Controls */}
         <GlimpsedControls
           onGuess={handleGuess}
-          gameCompleted={gameState.gameCompleted}
+          // Treat cooldown as a completed/readonly state for controls
+          gameCompleted={gameState.gameCompleted || (cooldownTime > 0 && !isArchiveGame)}
           onShare={handleShare}
           onReplay={handleReplay}
         />

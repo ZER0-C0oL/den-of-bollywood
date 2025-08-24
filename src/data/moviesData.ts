@@ -173,6 +173,20 @@ export const bollywoodMoviesData: MovieEntry[] = [
       { type: 'director', text: 'Directed by Aziz Mirza' },
       { type: 'cast', text: 'Starring Shah Rukh Khan and Rani Mukerji' }
     ]
+  },
+  {
+    id: '12',
+    name: 'Dil Bole Hadippa!',
+    aliases: [],
+    year: 2009,
+    director: 'Anupam Sharma',
+    cast: ['Rani Mukerji', 'Shahid Kapoor'],
+    genre: ['Drama', 'Romance'],
+    hints: [
+      { type: 'year', text: 'Released in 2009' },
+      { type: 'director', text: 'Directed by Anupam Sharma' },
+      { type: 'cast', text: 'Starring Rani Mukerji and Shahid Kapoor' }
+    ]
   }
 ];
 

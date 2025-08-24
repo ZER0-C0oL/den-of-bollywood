@@ -210,13 +210,13 @@ export const generateGlimpsedShareText = (data: GlimpsedShareData): string => {
   // Generate frame progress - one emoji per frame shown
   const frameProgress = Array.from({ length: data.framesShown }, (_, i) => {
     if (i < data.framesShown - 1) {
-      return '🎬'; // Frame shown
+      return WRONG_ATTEMPT; // Frame shown
     } else if (data.gameWon) {
       return SUCCESS; // Last frame with correct guess
     } else {
       return WRONG_ATTEMPT; // Last frame but wrong guess
     }
-  }).join('');
+  }).join(' ');
   
   // If game was completed with wrong guesses, show remaining frames as not shown
   const maxFrames = 6;
@@ -237,9 +237,8 @@ export const generateGlimpsedShareText = (data: GlimpsedShareData): string => {
 ${frameProgress}
 
 ${resultText}
-🎯 Frames shown: ${data.framesShown}/6
 
-${SHARE_CONFIG.WEBSITE_URL}`;
+${SHARE_CONFIG.WEBSITE_URL}/glimpsed`;
 };
 
 /**
